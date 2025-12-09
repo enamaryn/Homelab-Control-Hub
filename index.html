@@ -774,6 +774,66 @@
 
     .modal-body { margin-bottom: 8px; }
 
+    /* Auth overlay */
+    .auth-backdrop {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.12), rgba(2, 6, 23, 0.92));
+      backdrop-filter: blur(16px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      transition: opacity var(--transition-fast);
+    }
+
+    .auth-backdrop.auth-hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .auth-card {
+      background: var(--glass);
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
+      padding: 24px;
+      width: min(440px, calc(100% - 32px));
+      box-shadow: var(--shadow-soft);
+    }
+
+    .auth-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .auth-header h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      letter-spacing: 0.04em;
+    }
+
+    .auth-hint {
+      margin-top: 10px;
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .auth-note {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(56, 189, 248, 0.08);
+      color: var(--text);
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      font-size: 0.88rem;
+    }
+
     .form-group { margin-bottom: 10px; }
 
     .form-group label {
@@ -1020,6 +1080,32 @@
     <button class="settings-btn" id="btn-open-settings" title="Paramètres du portail">⚙️</button>
   </div>
 
+  <div class="auth-backdrop auth-hidden" id="auth-overlay" aria-modal="true" role="dialog" aria-labelledby="auth-title">
+    <div class="auth-card">
+      <div class="auth-header">
+        <h2 id="auth-title">Accès portail</h2>
+        <span class="auth-note">🔒 Session 1 jour</span>
+      </div>
+      <form id="auth-form" aria-label="Identification du portail">
+        <div class="form-group">
+          <label for="auth-username">Identifiant</label>
+          <input type="text" id="auth-username" autocomplete="username" required />
+        </div>
+        <div class="form-group">
+          <label for="auth-password">Mot de passe</label>
+          <input type="password" id="auth-password" autocomplete="current-password" required />
+        </div>
+        <div class="btn-row">
+          <button type="submit" class="btn btn-primary"><span>✅</span>Se connecter</button>
+        </div>
+        <div class="status" id="auth-status" role="status" aria-live="polite"></div>
+        <div class="auth-hint">
+          L’identifiant et le mot de passe par défaut sont <strong>admin</strong> / <strong>admin</strong>. Tu peux les modifier depuis la fenêtre de paramètres (⚙️). La session est retenue par un cookie valable jusqu’à la fin de la journée.
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Modal raccourcis -->
   <div class="modal-backdrop modal-hidden" id="modal">
     <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title" tabindex="-1">
@@ -1187,6 +1273,29 @@
             </select>
           </div>
 
+          <div class="form-group">
+            <label for="portal-auth-user">Identifiant de connexion</label>
+            <input
+              type="text"
+              id="portal-auth-user"
+              placeholder="Ex : admin, homer, jane..."
+              autocomplete="username"
+              required
+            />
+            <div class="file-hint">Modifie l’utilisateur requis pour accéder au portail.</div>
+          </div>
+
+          <div class="form-group">
+            <label for="portal-auth-pass">Mot de passe</label>
+            <input
+              type="password"
+              id="portal-auth-pass"
+              placeholder="Mot de passe requis au login"
+              autocomplete="new-password"
+            />
+            <div class="file-hint">Le cookie de session est valable jusqu’à la fin de la journée. Laisse vide pour conserver le mot de passe actuel.</div>
+          </div>
+
           <hr style="border: none; border-top: 1px solid rgba(148,163,184,0.4); margin: 10px 0;" />
 
           <div class="form-group">
@@ -1255,6 +1364,8 @@
     const HEALTH_TIMEOUT = 4500;
     const DEFAULT_HEALTH_PATH = "/health";
     const CAMERA_MODAL_REFRESH_INTERVAL = 1000; // 1 seconde
+    const AUTH_STORAGE_KEY = "homelab-auth-v1";
+    const AUTH_COOKIE_NAME = "homelab-auth-session";
 
     const TABS = [
       { id: "all", label: "Tous", icon: "✨" },
@@ -1368,6 +1479,14 @@
       ],
     };
 
+    const DEFAULT_AUTH_USERNAME = "admin";
+    const DEFAULT_AUTH_PASSWORD_HASH = "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918";
+
+    let authSettings = {
+      username: DEFAULT_AUTH_USERNAME,
+      passwordHash: DEFAULT_AUTH_PASSWORD_HASH,
+    };
+
     let portalLogoDataUrl = null;
 
     let currentCameraModal = {
@@ -1435,6 +1554,48 @@
       }
     }
 
+    async function hashPassword(value) {
+      const data = new TextEncoder().encode(value);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    async function loadAuthSettings() {
+      try {
+        const stored = localStorage.getItem(AUTH_STORAGE_KEY);
+        if (stored) {
+          const obj = JSON.parse(stored);
+          authSettings = {
+            ...authSettings,
+            ...obj,
+          };
+
+          if (!authSettings.passwordHash && authSettings.password) {
+            authSettings.passwordHash = await hashPassword(authSettings.password);
+            delete authSettings.password;
+            saveAuthSettings();
+          }
+        }
+      } catch (e) {
+        console.error("Erreur de lecture localStorage (auth)", e);
+      }
+    }
+
+    function saveAuthSettings() {
+      try {
+        localStorage.setItem(
+          AUTH_STORAGE_KEY,
+          JSON.stringify({
+            username: authSettings.username,
+            passwordHash: authSettings.passwordHash,
+          })
+        );
+      } catch (e) {
+        console.error("Erreur d'écriture localStorage (auth)", e);
+      }
+    }
+
     function applyTheme() {
       const theme = titleSettings.theme || "dark";
       document.documentElement.setAttribute("data-theme", theme);
@@ -1462,6 +1623,96 @@
           span.textContent = titleSettings.logoText || "HL";
           logoCircle.appendChild(span);
         }
+      }
+    }
+
+    function getCookie(name) {
+      const cookieString = document.cookie || "";
+      const found = cookieString
+        .split(";")
+        .map((c) => c.trim())
+        .find((c) => c.startsWith(`${name}=`));
+      return found ? found.split("=")[1] : null;
+    }
+
+    function setAuthCookieForDay() {
+      const expiry = new Date();
+      expiry.setHours(23, 59, 59, 999);
+      document.cookie = `${AUTH_COOKIE_NAME}=1; expires=${expiry.toUTCString()}; path=/; SameSite=Lax`;
+    }
+
+    function hasValidAuthSession() {
+      return Boolean(getCookie(AUTH_COOKIE_NAME));
+    }
+
+    function updateAuthOverlayFields(clearPassword = true) {
+      const userInput = document.getElementById("auth-username");
+      const passInput = document.getElementById("auth-password");
+      if (userInput) userInput.value = authSettings.username || "";
+      if (passInput && clearPassword) passInput.value = "";
+    }
+
+    function showAuthOverlay(message = "") {
+      const overlay = document.getElementById("auth-overlay");
+      const statusEl = document.getElementById("auth-status");
+      if (!overlay) return;
+      overlay.classList.remove("auth-hidden");
+      updateAuthOverlayFields();
+      if (statusEl) statusEl.innerHTML = message;
+      setTimeout(() => {
+        const userInput = document.getElementById("auth-username");
+        if (userInput) userInput.focus();
+      }, 0);
+    }
+
+    function hideAuthOverlay() {
+      const overlay = document.getElementById("auth-overlay");
+      const statusEl = document.getElementById("auth-status");
+      if (!overlay) return;
+      overlay.classList.add("auth-hidden");
+      if (statusEl) statusEl.innerHTML = "";
+      updateAuthOverlayFields();
+    }
+
+    function setupAuthOverlay() {
+      const form = document.getElementById("auth-form");
+      const userInput = document.getElementById("auth-username");
+      const passInput = document.getElementById("auth-password");
+      const statusEl = document.getElementById("auth-status");
+
+      if (!form || !userInput || !passInput) return;
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const username = userInput.value.trim();
+        const password = passInput.value;
+
+        if (!username || !password) {
+          if (statusEl) {
+            statusEl.innerHTML = '<span class="err">Merci de renseigner les deux champs.</span>';
+          }
+          return;
+        }
+
+        const passwordHash = await hashPassword(password);
+
+        if (username === authSettings.username && passwordHash === authSettings.passwordHash) {
+          setAuthCookieForDay();
+          if (statusEl) {
+            statusEl.innerHTML = '<span class="ok">Connexion réussie. Bon retour !</span>';
+          }
+          setTimeout(() => hideAuthOverlay(), 180);
+        } else if (statusEl) {
+          statusEl.innerHTML = '<span class="err">Identifiants incorrects.</span>';
+        }
+      });
+    }
+
+    function enforceAuthSession() {
+      if (hasValidAuthSession()) {
+        hideAuthOverlay();
+      } else {
+        showAuthOverlay();
       }
     }
 
@@ -1955,6 +2206,8 @@
       const logoUrlInput = document.getElementById("portal-logo-url");
       const fileNameEl = document.getElementById("portal-logo-filename");
       const themeSelect = document.getElementById("portal-theme-select");
+      const authUserInput = document.getElementById("portal-auth-user");
+      const authPassInput = document.getElementById("portal-auth-pass");
       const status = document.getElementById("settings-status");
 
       titleInput.value = titleSettings.title || "";
@@ -1962,6 +2215,8 @@
       logoTextInput.value = titleSettings.logoText || "HL";
       logoUrlInput.value = titleSettings.logoImageUrl || "";
       themeSelect.value = titleSettings.theme || "dark";
+      if (authUserInput) authUserInput.value = authSettings.username || DEFAULT_AUTH_USERNAME;
+      if (authPassInput) authPassInput.value = "";
 
       portalLogoDataUrl = null;
       status.innerHTML = "";
@@ -2001,6 +2256,8 @@
       const logoFileInput = document.getElementById("portal-logo-file");
       const fileNameEl = document.getElementById("portal-logo-filename");
       const themeSelect = document.getElementById("portal-theme-select");
+      const authUserInput = document.getElementById("portal-auth-user");
+      const authPassInput = document.getElementById("portal-auth-pass");
       const status = document.getElementById("settings-status");
       const btnResetTitle = document.getElementById("btn-reset-title");
 
@@ -2034,6 +2291,8 @@
         const logoText = logoTextInput.value.trim() || "HL";
         const logoExternal = logoUrlInput.value.trim();
         const theme = themeSelect.value || "dark";
+        const authUser = authUserInput ? authUserInput.value.trim() : "";
+        const authPass = authPassInput ? authPassInput.value : "";
 
         if (!title || !subtitle) {
           status.innerHTML =
@@ -2041,10 +2300,23 @@
           return;
         }
 
+        if (!authUser) {
+          status.innerHTML = '<span class="err">Identifiant requis.</span>';
+          return;
+        }
+
         titleSettings.title = title;
         titleSettings.subtitle = subtitle;
         titleSettings.logoText = logoText;
         titleSettings.theme = theme;
+
+        authSettings.username = authUser;
+        if (authPass) {
+          hashPassword(authPass).then((hash) => {
+            authSettings.passwordHash = hash;
+            saveAuthSettings();
+          });
+        }
 
         if (logoExternal) {
           titleSettings.logoImageUrl = logoExternal;
@@ -2067,13 +2339,17 @@
         });
         titleSettings.cameras = cams;
 
+        saveAuthSettings();
+        updateAuthOverlayFields(false);
+        setAuthCookieForDay();
+
         saveTitleSettings();
         applyTheme();
         applyTitleSettings();
         renderCameras();
 
         status.innerHTML =
-          '<span class="ok">Bandeau, thème et caméras mis à jour avec succès.</span>';
+          '<span class="ok">Bandeau, thème, caméras et accès protégés mis à jour.</span>';
       });
 
       btnResetTitle.addEventListener("click", () => {
@@ -2094,6 +2370,12 @@
             { name: "Salon", snapshotUrl: "", clickUrl: "" },
           ],
         };
+        authSettings = { username: DEFAULT_AUTH_USERNAME, passwordHash: DEFAULT_AUTH_PASSWORD_HASH };
+        if (authUserInput) authUserInput.value = authSettings.username;
+        if (authPassInput) authPassInput.value = "";
+        saveAuthSettings();
+        updateAuthOverlayFields();
+        setAuthCookieForDay();
         saveTitleSettings();
         applyTheme();
         applyTitleSettings();
@@ -2106,6 +2388,8 @@
         logoFileInput.value = "";
         fileNameEl.textContent = "(aucun fichier)";
         themeSelect.value = titleSettings.theme;
+        if (authUserInput) authUserInput.value = authSettings.username;
+        if (authPassInput) authPassInput.value = "";
 
         titleSettings.cameras.forEach((cam, index) => {
           const nameEl = document.getElementById(`camera-name-${index}`);
@@ -2289,7 +2573,8 @@
       }
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", async () => {
+      await loadAuthSettings();
       loadTitleSettings();
       applyTheme();
       applyTitleSettings();
@@ -2307,6 +2592,7 @@
       setupSearch();
       setupShortcutForm();
       setupSettingsForm();
+      setupAuthOverlay();
 
       updateClock();
       setInterval(updateClock, 1000);
@@ -2363,6 +2649,8 @@
           closeCameraModal();
         }
       });
+
+      enforceAuthSession();
     });
   </script>
 </body>
