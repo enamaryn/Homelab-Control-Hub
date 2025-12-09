@@ -1153,6 +1153,7 @@
               👁️
             </button>
           </div>
+          <input type="password" id="auth-password" autocomplete="current-password" required />
         </div>
         <div class="btn-row">
           <button type="submit" class="btn btn-primary"><span>✅</span>Se connecter</button>
@@ -1363,6 +1364,12 @@
                 👁️
               </button>
             </div>
+            <input
+              type="password"
+              id="portal-auth-pass"
+              placeholder="Mot de passe requis au login"
+              autocomplete="new-password"
+            />
             <div class="file-hint">Le cookie de session est valable jusqu’à la fin de la journée. Laisse vide pour conserver le mot de passe actuel.</div>
           </div>
 
@@ -1746,6 +1753,11 @@
       if (updated) {
         saveAuthSettings();
       }
+    async function hashPassword(value) {
+      const data = new TextEncoder().encode(value);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
     }
 
     async function loadAuthSettings() {
@@ -1857,6 +1869,7 @@
         passInput.type = "password";
         if (clearPassword) passInput.value = "";
       }
+      if (passInput && clearPassword) passInput.value = "";
     }
 
     function showAuthOverlay(message = "") {
