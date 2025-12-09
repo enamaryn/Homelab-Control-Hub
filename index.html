@@ -1292,9 +1292,8 @@
               id="portal-auth-pass"
               placeholder="Mot de passe requis au login"
               autocomplete="new-password"
-              required
             />
-            <div class="file-hint">Le cookie de session est valable jusqu’à la fin de la journée.</div>
+            <div class="file-hint">Le cookie de session est valable jusqu’à la fin de la journée. Laisse vide pour conserver le mot de passe actuel.</div>
           </div>
 
           <hr style="border: none; border-top: 1px solid rgba(148,163,184,0.4); margin: 10px 0;" />
@@ -1480,9 +1479,12 @@
       ],
     };
 
+    const DEFAULT_AUTH_USERNAME = "admin";
+    const DEFAULT_AUTH_PASSWORD_HASH = "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918";
+
     let authSettings = {
-      username: "admin",
-      password: "admin",
+      username: DEFAULT_AUTH_USERNAME,
+      passwordHash: DEFAULT_AUTH_PASSWORD_HASH,
     };
 
     let portalLogoDataUrl = null;
@@ -1552,7 +1554,14 @@
       }
     }
 
-    function loadAuthSettings() {
+    async function hashPassword(value) {
+      const data = new TextEncoder().encode(value);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    async function loadAuthSettings() {
       try {
         const stored = localStorage.getItem(AUTH_STORAGE_KEY);
         if (stored) {
@@ -1561,6 +1570,21 @@
             ...authSettings,
             ...obj,
           };
+
+          if (!authSettings.passwordHash && authSettings.password) {
+            authSettings.passwordHash = await hashPassword(authSettings.password);
+            delete authSettings.password;
+            saveAuthSettings();
+          }
+
+          if (!authSettings.username) {
+            authSettings.username = DEFAULT_AUTH_USERNAME;
+          }
+
+          if (!authSettings.passwordHash) {
+            authSettings.passwordHash = DEFAULT_AUTH_PASSWORD_HASH;
+            saveAuthSettings();
+          }
         }
       } catch (e) {
         console.error("Erreur de lecture localStorage (auth)", e);
@@ -1569,7 +1593,13 @@
 
     function saveAuthSettings() {
       try {
-        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authSettings));
+        localStorage.setItem(
+          AUTH_STORAGE_KEY,
+          JSON.stringify({
+            username: authSettings.username,
+            passwordHash: authSettings.passwordHash,
+          })
+        );
       } catch (e) {
         console.error("Erreur d'écriture localStorage (auth)", e);
       }
@@ -1620,6 +1650,10 @@
       document.cookie = `${AUTH_COOKIE_NAME}=1; expires=${expiry.toUTCString()}; path=/; SameSite=Lax`;
     }
 
+    function clearAuthCookie() {
+      document.cookie = `${AUTH_COOKIE_NAME}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax`;
+    }
+
     function hasValidAuthSession() {
       return Boolean(getCookie(AUTH_COOKIE_NAME));
     }
@@ -1661,7 +1695,7 @@
 
       if (!form || !userInput || !passInput) return;
 
-      form.addEventListener("submit", (e) => {
+      form.addEventListener("submit", async (e) => {
         e.preventDefault();
         const username = userInput.value.trim();
         const password = passInput.value;
@@ -1673,7 +1707,9 @@
           return;
         }
 
-        if (username === authSettings.username && password === authSettings.password) {
+        const passwordHash = await hashPassword(password);
+
+        if (username === authSettings.username && passwordHash === authSettings.passwordHash) {
           setAuthCookieForDay();
           if (statusEl) {
             statusEl.innerHTML = '<span class="ok">Connexion réussie. Bon retour !</span>';
@@ -1690,6 +1726,15 @@
         hideAuthOverlay();
       } else {
         showAuthOverlay();
+      }
+    }
+
+    function handleAuthSessionAfterSettings(credentialsChanged) {
+      if (credentialsChanged) {
+        clearAuthCookie();
+        showAuthOverlay('<span class="ok">Identifiants mis à jour, merci de vous reconnecter.</span>');
+      } else {
+        setAuthCookieForDay();
       }
     }
 
@@ -2192,8 +2237,8 @@
       logoTextInput.value = titleSettings.logoText || "HL";
       logoUrlInput.value = titleSettings.logoImageUrl || "";
       themeSelect.value = titleSettings.theme || "dark";
-      if (authUserInput) authUserInput.value = authSettings.username || "admin";
-      if (authPassInput) authPassInput.value = authSettings.password || "admin";
+      if (authUserInput) authUserInput.value = authSettings.username || DEFAULT_AUTH_USERNAME;
+      if (authPassInput) authPassInput.value = "";
 
       portalLogoDataUrl = null;
       status.innerHTML = "";
@@ -2261,7 +2306,7 @@
         reader.readAsDataURL(file);
       });
 
-      form.addEventListener("submit", (e) => {
+      form.addEventListener("submit", async (e) => {
         e.preventDefault();
         const title = titleInput.value.trim();
         const subtitle = subtitleInput.value.trim();
@@ -2270,6 +2315,7 @@
         const theme = themeSelect.value || "dark";
         const authUser = authUserInput ? authUserInput.value.trim() : "";
         const authPass = authPassInput ? authPassInput.value : "";
+        const previousAuth = { ...authSettings };
 
         if (!title || !subtitle) {
           status.innerHTML =
@@ -2277,9 +2323,8 @@
           return;
         }
 
-        if (!authUser || !authPass) {
-          status.innerHTML =
-            '<span class="err">Merci de renseigner un identifiant et un mot de passe.</span>';
+        if (!authUser) {
+          status.innerHTML = '<span class="err">Identifiant requis.</span>';
           return;
         }
 
@@ -2288,8 +2333,12 @@
         titleSettings.logoText = logoText;
         titleSettings.theme = theme;
 
+        let passwordChanged = false;
         authSettings.username = authUser;
-        authSettings.password = authPass;
+        if (authPass) {
+          authSettings.passwordHash = await hashPassword(authPass);
+          passwordChanged = true;
+        }
 
         if (logoExternal) {
           titleSettings.logoImageUrl = logoExternal;
@@ -2314,7 +2363,9 @@
 
         saveAuthSettings();
         updateAuthOverlayFields(false);
-        setAuthCookieForDay();
+        handleAuthSessionAfterSettings(
+          previousAuth.username !== authSettings.username || passwordChanged
+        );
 
         saveTitleSettings();
         applyTheme();
@@ -2343,12 +2394,12 @@
             { name: "Salon", snapshotUrl: "", clickUrl: "" },
           ],
         };
-        authSettings = { username: "admin", password: "admin" };
+        authSettings = { username: DEFAULT_AUTH_USERNAME, passwordHash: DEFAULT_AUTH_PASSWORD_HASH };
         if (authUserInput) authUserInput.value = authSettings.username;
-        if (authPassInput) authPassInput.value = authSettings.password;
+        if (authPassInput) authPassInput.value = "";
         saveAuthSettings();
         updateAuthOverlayFields();
-        setAuthCookieForDay();
+        handleAuthSessionAfterSettings(true);
         saveTitleSettings();
         applyTheme();
         applyTitleSettings();
@@ -2362,7 +2413,7 @@
         fileNameEl.textContent = "(aucun fichier)";
         themeSelect.value = titleSettings.theme;
         if (authUserInput) authUserInput.value = authSettings.username;
-        if (authPassInput) authPassInput.value = authSettings.password;
+        if (authPassInput) authPassInput.value = "";
 
         titleSettings.cameras.forEach((cam, index) => {
           const nameEl = document.getElementById(`camera-name-${index}`);
@@ -2546,8 +2597,8 @@
       }
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
-      loadAuthSettings();
+    document.addEventListener("DOMContentLoaded", async () => {
+      await loadAuthSettings();
       loadTitleSettings();
       applyTheme();
       applyTitleSettings();
