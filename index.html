@@ -236,6 +236,20 @@
       transform: translateY(-0.5px);
     }
 
+    .tile:focus-visible,
+    .tab-btn:focus-visible,
+    .fab:focus-visible,
+    .settings-btn:focus-visible,
+    .camera-card:focus-visible,
+    .modal-close:focus-visible,
+    .btn:focus-visible,
+    input:focus-visible,
+    select:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
     .search-icon {
       position: absolute;
       left: 10px;
@@ -972,6 +986,7 @@
             type="text"
             id="search"
             placeholder="Filtrer les services (ex : proxmox, media, download...)"
+            aria-label="Filtrer les services"
           />
         </div>
         <div class="quick-info">
@@ -983,7 +998,7 @@
       <div class="camera-strip" id="camera-strip"></div>
 
       <!-- Onglets -->
-      <div class="tabs" id="tabs"></div>
+      <div class="tabs" id="tabs" role="tablist" aria-label="Filtrer les services"></div>
 
       <main>
         <section class="panel panel-primary">
@@ -1007,12 +1022,12 @@
 
   <!-- Modal raccourcis -->
   <div class="modal-backdrop modal-hidden" id="modal">
-    <div class="modal-dialog">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title" tabindex="-1">
       <div class="modal-header">
         <h2 id="modal-title"><span>Ajouter</span> un raccourci</h2>
         <button class="modal-close" id="modal-close" type="button">✕</button>
       </div>
-      <form id="shortcut-form">
+      <form id="shortcut-form" aria-label="Gestion des raccourcis">
         <div class="modal-body">
           <div class="form-group">
             <label for="name">Nom du service</label>
@@ -1050,7 +1065,27 @@
               <span id="file-name">(aucun fichier)</span>
             </div>
             <div class="file-hint">
-              Formats recommandés : PNG / JPG / WebP / SVG, taille max ~256 Ko, image plutôt carrée (ex : 128–256 px).
+              Ou indique une URL d'image (prioritaire) :
+              <input
+                type="url"
+                id="logo-url"
+                placeholder="https://exemple.com/logo.png"
+                style="margin-top:6px;"
+              />
+            </div>
+            <div class="file-hint">
+              Formats recommandés : PNG / JPG / WebP / SVG, taille max ~100 Ko si tu téléverses, image plutôt carrée (ex : 128–256 px).
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="health-url">URL de santé (facultatif)</label>
+            <input
+              type="url"
+              id="health-url"
+              placeholder="https://mon-service.local/health"
+            />
+            <div class="file-hint">
+              Utilisé uniquement pour le check d'état, séparé de l'URL d'ouverture pour plus de fiabilité.
             </div>
           </div>
         </div>
@@ -1065,7 +1100,7 @@
             <span>🗑️</span> Supprimer ce raccourci
           </button>
         </div>
-        <div class="status" id="status"></div>
+        <div class="status" id="status" role="status" aria-live="polite"></div>
         <div class="modal-footer-actions">
           <button type="button" class="btn-ghost" id="btn-empty-all">
             <span>Vider tous les raccourcis</span>
@@ -1083,12 +1118,12 @@
 
   <!-- Modal paramètres portail + caméras -->
   <div class="modal-backdrop modal-hidden" id="settings-modal">
-    <div class="modal-dialog">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title" tabindex="-1">
       <div class="modal-header">
-        <h2><span>Paramètres</span> du portail</h2>
+        <h2 id="settings-modal-title"><span>Paramètres</span> du portail</h2>
         <button class="modal-close" id="settings-close" type="button">✕</button>
       </div>
-      <form id="settings-form">
+      <form id="settings-form" aria-label="Paramètres du portail">
         <div class="modal-body">
           <div class="form-group">
             <label for="portal-title-input">Titre du portail</label>
@@ -1130,7 +1165,16 @@
               <span id="portal-logo-filename">(aucun fichier)</span>
             </div>
             <div class="file-hint">
-              Formats recommandés : PNG / JPG / WebP / SVG, taille max ~256 Ko, image plutôt carrée (ex : 128–256 px).
+              Ou indique une URL d'image (prioritaire) :
+              <input
+                type="url"
+                id="portal-logo-url"
+                placeholder="https://exemple.com/logo.png"
+                style="margin-top:6px;"
+              />
+            </div>
+            <div class="file-hint">
+              Formats recommandés : PNG / JPG / WebP / SVG, taille max ~100 Ko si tu téléverses, image plutôt carrée (ex : 128–256 px).
               Si aucune image n’est choisie, le texte du logo est utilisé.
             </div>
           </div>
@@ -1165,7 +1209,7 @@
             <span>♻️</span> Valeurs par défaut
           </button>
         </div>
-        <div class="status" id="settings-status"></div>
+        <div class="status" id="settings-status" role="status" aria-live="polite"></div>
         <div class="modal-footer-actions">
           <span>🧠 Ces réglages sont aussi gardés dans <code>localStorage</code>.</span>
         </div>
@@ -1175,9 +1219,9 @@
 
   <!-- Modal vue caméra plein écran -->
   <div class="modal-backdrop modal-hidden" id="camera-modal">
-    <div class="modal-dialog">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="camera-modal-heading" tabindex="-1">
       <div class="modal-header">
-        <h2><span>Caméra</span> <span id="camera-modal-name"></span></h2>
+        <h2 id="camera-modal-heading"><span>Caméra</span> <span id="camera-modal-name"></span></h2>
         <button class="modal-close" id="camera-modal-close" type="button">✕</button>
       </div>
       <div class="modal-body">
@@ -1201,13 +1245,15 @@
           <span>✕</span> Fermer
         </button>
       </div>
-      <div class="status" id="camera-modal-status"></div>
+      <div class="status" id="camera-modal-status" role="status" aria-live="polite"></div>
     </div>
   </div>
 
   <script>
-    const MAX_IMAGE_SIZE = 256 * 1024;
+    const MAX_IMAGE_SIZE = 100 * 1024;
     const HEALTH_CHECK_INTERVAL = 20000;
+    const HEALTH_TIMEOUT = 4500;
+    const DEFAULT_HEALTH_PATH = "/health";
     const CAMERA_MODAL_REFRESH_INTERVAL = 1000; // 1 seconde
 
     const TABS = [
@@ -1225,6 +1271,7 @@
       {
         name: "Proxmox",
         url: "https://proxmox.local:8006",
+        healthUrl: "https://proxmox.local:8006/api2/json/version",
         description: "Hyperviseur & VM / LXC",
         chip: "Core",
         icon: "🧬",
@@ -1233,6 +1280,7 @@
       {
         name: "Zoraxy",
         url: "https://zoraxy.local",
+        healthUrl: "https://zoraxy.local/health",
         description: "Reverse proxy / SSO",
         chip: "Edge",
         icon: "🛡️",
@@ -1241,6 +1289,7 @@
       {
         name: "Docker / Portainer",
         url: "https://docker.local:9443",
+        healthUrl: "https://docker.local:9443/api/system/status",
         description: "Stacks & containers",
         chip: "Docker",
         icon: "🐋",
@@ -1249,6 +1298,7 @@
       {
         name: "Transmission",
         url: "https://transmission.local",
+        healthUrl: "https://transmission.local/transmission/rpc",
         description: "Downloads & torrents",
         chip: "Media",
         icon: "📡",
@@ -1257,6 +1307,7 @@
       {
         name: "Emby",
         url: "https://emby.local:8096",
+        healthUrl: "https://emby.local:8096/emby/System/Ping",
         description: "Serveur multimédia",
         chip: "Media",
         icon: "🎬",
@@ -1265,6 +1316,7 @@
       {
         name: "Home Assistant",
         url: "https://ha.local:8123",
+        healthUrl: "https://ha.local:8123/api/",
         description: "Domotique / IoT",
         chip: "SmartHome",
         icon: "🏠",
@@ -1273,6 +1325,7 @@
       {
         name: "Frigate",
         url: "https://frigate.local",
+        healthUrl: "https://frigate.local/api/version",
         description: "NVR & détection IA",
         chip: "Caméra",
         icon: "📹",
@@ -1281,6 +1334,7 @@
       {
         name: "OpenWebUI / IA",
         url: "https://ai.local",
+        healthUrl: "https://ai.local/health",
         description: "Interface IA locale",
         chip: "AI",
         icon: "🧠",
@@ -1303,6 +1357,7 @@
       title: "Homelab Control Hub",
       subtitle: "Portail privé – services locaux & containers",
       logoText: "HL",
+      logoImageUrl: "",
       logoImage: null,
       theme: "dark",
       cameras: [
@@ -1395,9 +1450,10 @@
 
       if (logoCircle) {
         logoCircle.innerHTML = "";
-        if (titleSettings.logoImage) {
+        const logoSource = titleSettings.logoImageUrl || titleSettings.logoImage;
+        if (logoSource) {
           const img = document.createElement("img");
-          img.src = titleSettings.logoImage;
+          img.src = logoSource;
           img.alt = titleSettings.logoText || "Logo";
           logoCircle.appendChild(img);
         } else {
@@ -1437,6 +1493,9 @@
         btn.type = "button";
         btn.className = "tab-btn" + (tab.id === uiState.activeTab ? " active" : "");
         btn.dataset.tab = tab.id;
+        btn.setAttribute("role", "tab");
+        btn.setAttribute("aria-selected", tab.id === uiState.activeTab ? "true" : "false");
+        btn.setAttribute("tabindex", tab.id === uiState.activeTab ? "0" : "-1");
         btn.innerHTML = `<span>${tab.icon}</span>${tab.label}`;
         btn.addEventListener("click", () => {
           uiState.activeTab = tab.id;
@@ -1448,6 +1507,13 @@
       });
     }
 
+    function isImageIcon(icon) {
+      return (
+        typeof icon === "string" &&
+        (icon.startsWith("data:image") || icon.startsWith("http://") || icon.startsWith("https://"))
+      );
+    }
+
     function createTile(link) {
       const tile = document.createElement("div");
       tile.className = "tile";
@@ -1455,10 +1521,25 @@
         "data-search",
         ((link.name || "") + " " + (link.description || "")).toLowerCase()
       );
+      tile.setAttribute("role", "button");
+      tile.setAttribute(
+        "aria-label",
+        `${link.name || "Service"} – ${link.description || link.url || "Ouvrir le lien"}`
+      );
+      tile.setAttribute("tabindex", "0");
 
       tile.addEventListener("click", () => {
         if (!link.url) return;
         window.open(link.url, "_blank", "noopener,noreferrer");
+      });
+
+      tile.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          if (link.url) {
+            window.open(link.url, "_blank", "noopener,noreferrer");
+          }
+        }
       });
 
       const header = document.createElement("div");
@@ -1467,7 +1548,7 @@
       const logo = document.createElement("div");
       logo.className = "tile-logo";
 
-      if (link.icon && typeof link.icon === "string" && link.icon.startsWith("data:image")) {
+      if (isImageIcon(link.icon)) {
         const img = document.createElement("img");
         img.src = link.icon;
         img.alt = link.name || "logo";
@@ -1580,10 +1661,14 @@
       const inputName = document.getElementById("name");
       const inputUrl = document.getElementById("url");
       const tabSelect = document.getElementById("shortcut-tab");
+      const logoUrlInput = document.getElementById("logo-url");
+      const healthUrlInput = document.getElementById("health-url");
 
       logoDataUrl = null;
       status.innerHTML = "";
       fileNameEl.textContent = "(aucun fichier)";
+      logoUrlInput.value = "";
+      healthUrlInput.value = "";
       form.reset();
 
       if (mode === "edit" && id) {
@@ -1595,6 +1680,11 @@
         inputName.value = link.name || "";
         inputUrl.value = link.url || "";
         tabSelect.value = link.tab || "custom";
+        logoUrlInput.value =
+          link.icon && typeof link.icon === "string" && link.icon.startsWith("http")
+            ? link.icon
+            : "";
+        healthUrlInput.value = link.healthUrl || "";
         deleteBtn.style.display = "inline-flex";
       } else {
         currentEditId = null;
@@ -1604,6 +1694,7 @@
       }
 
       modal.classList.remove("modal-hidden");
+      setTimeout(() => inputName.focus(), 0);
     }
 
     function closeShortcutModal() {
@@ -1619,6 +1710,8 @@
       const inputUrl = document.getElementById("url");
       const tabSelect = document.getElementById("shortcut-tab");
       const inputLogo = document.getElementById("logo");
+      const inputLogoUrl = document.getElementById("logo-url");
+      const inputHealthUrl = document.getElementById("health-url");
       const fileName = document.getElementById("file-name");
       const status = document.getElementById("status");
       const btnNewResetForm = document.getElementById("btn-new-reset-form");
@@ -1635,7 +1728,7 @@
         }
         if (file.size > MAX_IMAGE_SIZE) {
           status.innerHTML =
-            '<span class="err">Fichier trop gros (max ~256 Ko). Choisis une image plus légère.</span>';
+            '<span class="err">Fichier trop gros (max ~100 Ko). Choisis une image plus légère.</span>';
           inputLogo.value = "";
           fileName.textContent = "(aucun fichier)";
           logoDataUrl = null;
@@ -1654,6 +1747,8 @@
         const name = inputName.value.trim();
         const url = inputUrl.value.trim();
         const tab = tabSelect.value || "custom";
+        const logoExternal = inputLogoUrl.value.trim();
+        const healthUrl = inputHealthUrl.value.trim();
 
         if (!name || !url) {
           status.innerHTML =
@@ -1670,7 +1765,8 @@
               name,
               url,
               description: existing.description || url,
-              icon: logoDataUrl || existing.icon,
+              icon: logoExternal || logoDataUrl || existing.icon,
+              healthUrl: healthUrl || existing.healthUrl || "",
               tab,
             };
           }
@@ -1683,7 +1779,8 @@
             url,
             description: url,
             chip: "Custom",
-            icon: logoDataUrl || "⭐",
+            icon: logoExternal || logoDataUrl || "⭐",
+            healthUrl,
             tab,
           };
           links.push(newLink);
@@ -1705,6 +1802,8 @@
         btnDelete.style.display = "none";
         status.innerHTML = "";
         tabSelect.value = uiState.activeTab !== "all" ? uiState.activeTab : "custom";
+        logoUrlInput.value = "";
+        healthUrlInput.value = "";
       });
 
       btnDelete.addEventListener("click", () => {
@@ -1782,9 +1881,22 @@
       titleSettings.cameras.forEach((cam, index) => {
         const card = document.createElement("div");
         card.className = "camera-card";
+        card.setAttribute("role", "button");
+        card.setAttribute("tabindex", "0");
+        card.setAttribute(
+          "aria-label",
+          (cam.name || `Caméra ${index + 1}`) + (cam.snapshotUrl ? " : aperçu" : " : à configurer")
+        );
 
         card.addEventListener("click", () => {
           openCameraModal(cam);
+        });
+
+        card.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            openCameraModal(cam);
+          }
         });
 
         const inner = document.createElement("div");
@@ -1840,6 +1952,7 @@
       const titleInput = document.getElementById("portal-title-input");
       const subtitleInput = document.getElementById("portal-subtitle-input");
       const logoTextInput = document.getElementById("portal-logo-text");
+      const logoUrlInput = document.getElementById("portal-logo-url");
       const fileNameEl = document.getElementById("portal-logo-filename");
       const themeSelect = document.getElementById("portal-theme-select");
       const status = document.getElementById("settings-status");
@@ -1847,12 +1960,13 @@
       titleInput.value = titleSettings.title || "";
       subtitleInput.value = titleSettings.subtitle || "";
       logoTextInput.value = titleSettings.logoText || "HL";
+      logoUrlInput.value = titleSettings.logoImageUrl || "";
       themeSelect.value = titleSettings.theme || "dark";
 
       portalLogoDataUrl = null;
       status.innerHTML = "";
 
-      if (titleSettings.logoImage) {
+      if (titleSettings.logoImage || titleSettings.logoImageUrl) {
         fileNameEl.textContent = "(logo actuel chargé)";
       } else {
         fileNameEl.textContent = "(aucun fichier)";
@@ -1869,6 +1983,7 @@
       });
 
       modal.classList.remove("modal-hidden");
+      setTimeout(() => titleInput.focus(), 0);
     }
 
     function closeSettingsModal() {
@@ -1882,6 +1997,7 @@
       const titleInput = document.getElementById("portal-title-input");
       const subtitleInput = document.getElementById("portal-subtitle-input");
       const logoTextInput = document.getElementById("portal-logo-text");
+      const logoUrlInput = document.getElementById("portal-logo-url");
       const logoFileInput = document.getElementById("portal-logo-file");
       const fileNameEl = document.getElementById("portal-logo-filename");
       const themeSelect = document.getElementById("portal-theme-select");
@@ -1897,7 +2013,7 @@
         }
         if (file.size > MAX_IMAGE_SIZE) {
           status.innerHTML =
-            '<span class="err">Logo trop lourd (max ~256 Ko). Choisis une image plus légère.</span>';
+            '<span class="err">Logo trop lourd (max ~100 Ko). Choisis une image plus légère.</span>';
           logoFileInput.value = "";
           fileNameEl.textContent = "(aucun fichier)";
           portalLogoDataUrl = null;
@@ -1916,6 +2032,7 @@
         const title = titleInput.value.trim();
         const subtitle = subtitleInput.value.trim();
         const logoText = logoTextInput.value.trim() || "HL";
+        const logoExternal = logoUrlInput.value.trim();
         const theme = themeSelect.value || "dark";
 
         if (!title || !subtitle) {
@@ -1929,8 +2046,12 @@
         titleSettings.logoText = logoText;
         titleSettings.theme = theme;
 
-        if (portalLogoDataUrl !== null) {
+        if (logoExternal) {
+          titleSettings.logoImageUrl = logoExternal;
+          titleSettings.logoImage = null;
+        } else if (portalLogoDataUrl !== null) {
           titleSettings.logoImage = portalLogoDataUrl;
+          titleSettings.logoImageUrl = "";
         }
 
         const cams = [];
@@ -1963,6 +2084,7 @@
           title: "Homelab Control Hub",
           subtitle: "Portail privé – services locaux & containers",
           logoText: "HL",
+          logoImageUrl: "",
           logoImage: null,
           theme: "dark",
           cameras: [
@@ -1980,6 +2102,7 @@
         titleInput.value = titleSettings.title;
         subtitleInput.value = titleSettings.subtitle;
         logoTextInput.value = titleSettings.logoText;
+        logoUrlInput.value = "";
         logoFileInput.value = "";
         fileNameEl.textContent = "(aucun fichier)";
         themeSelect.value = titleSettings.theme;
@@ -2022,25 +2145,69 @@
       }
     }
 
+    function getHealthUrl(link) {
+      if (link.healthUrl && link.healthUrl.trim()) return link.healthUrl.trim();
+      if (!link.url) return null;
+      const trimmed = link.url.endsWith("/") ? link.url.slice(0, -1) : link.url;
+      return `${trimmed}${DEFAULT_HEALTH_PATH}`;
+    }
+
+    function pingLinkWithImage(url, linkId) {
+      const img = new Image();
+      let resolved = false;
+      const timeout = setTimeout(() => {
+        if (resolved) return;
+        resolved = true;
+        setStatus(linkId, "down");
+      }, HEALTH_TIMEOUT);
+
+      img.onload = () => {
+        if (resolved) return;
+        resolved = true;
+        clearTimeout(timeout);
+        setStatus(linkId, "up");
+      };
+
+      img.onerror = () => {
+        if (resolved) return;
+        resolved = true;
+        clearTimeout(timeout);
+        setStatus(linkId, "down");
+      };
+
+      img.referrerPolicy = "no-referrer";
+      img.decoding = "async";
+      const sep = url.includes("?") ? "&" : "?";
+      img.src = `${url}${sep}t=${Date.now()}`;
+    }
+
     function pingLink(link) {
-      const url = link.healthUrl || link.url;
+      const url = getHealthUrl(link);
       if (!url) {
         setStatus(link.id, "unknown");
         return;
       }
 
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 4000);
+      const timeout = setTimeout(() => controller.abort(), HEALTH_TIMEOUT);
 
-      fetch(url, { mode: "no-cors", signal: controller.signal })
-        .then(() => {
-          setStatus(link.id, "up");
+      fetch(url, {
+        mode: "cors",
+        cache: "no-store",
+        redirect: "follow",
+        signal: controller.signal,
+      })
+        .then((response) => {
+          clearTimeout(timeout);
+          if (response.ok || response.type === "opaque") {
+            setStatus(link.id, "up");
+          } else {
+            setStatus(link.id, "down");
+          }
         })
         .catch(() => {
-          setStatus(link.id, "down");
-        })
-        .finally(() => {
           clearTimeout(timeout);
+          pingLinkWithImage(url, link.id);
         });
     }
 
@@ -2110,6 +2277,7 @@
       }
 
       modal.classList.remove("modal-hidden");
+      setTimeout(() => document.getElementById("camera-modal-close").focus(), 0);
     }
 
     function closeCameraModal() {
