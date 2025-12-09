@@ -860,8 +860,10 @@
     }
 
     .form-group input[type="password"] {
+      color: var(--text);
       -webkit-text-fill-color: var(--text);
       caret-color: var(--accent);
+      text-shadow: 0 0 0 var(--text);
     }
 
     .form-group input::placeholder { color: rgba(148, 163, 184, 0.7); }
@@ -884,7 +886,7 @@
       padding-right: 38px;
     }
 
-    .password-toggle {
+    .password-toggle { 
       position: absolute;
       right: 8px;
       top: 50%;
@@ -901,6 +903,17 @@
       cursor: pointer;
       transition: color var(--transition-fast), border var(--transition-fast),
         background var(--transition-fast), transform var(--transition-fast);
+    }
+
+    .auth-actions {
+      margin-top: 8px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .auth-actions .btn {
+      width: 100%;
+      justify-content: center;
     }
 
     .password-toggle:focus-visible {
@@ -1153,12 +1166,16 @@
               👁️
             </button>
           </div>
-          <input type="password" id="auth-password" autocomplete="current-password" required />
         </div>
         <div class="btn-row">
           <button type="submit" class="btn btn-primary"><span>✅</span>Se connecter</button>
         </div>
         <div class="status" id="auth-status" role="status" aria-live="polite"></div>
+        <div class="auth-actions">
+          <button type="button" class="btn btn-secondary" id="auth-reset-btn">
+            <span>♻️</span>Réinitialiser (admin / admin)
+          </button>
+        </div>
         <div class="auth-hint">
           L’identifiant et le mot de passe par défaut sont <strong>admin</strong> / <strong>admin</strong>. Tu peux les modifier depuis la fenêtre de paramètres (⚙️). La session est retenue par un cookie valable jusqu’à la fin de la journée.
         </div>
@@ -1364,12 +1381,6 @@
                 👁️
               </button>
             </div>
-            <input
-              type="password"
-              id="portal-auth-pass"
-              placeholder="Mot de passe requis au login"
-              autocomplete="new-password"
-            />
             <div class="file-hint">Le cookie de session est valable jusqu’à la fin de la journée. Laisse vide pour conserver le mot de passe actuel.</div>
           </div>
 
@@ -1736,28 +1747,46 @@
       return sha256Fallback(data);
     }
 
+    function normalizePasswordHash(hash) {
+      if (typeof hash !== "string") return null;
+      const normalized = hash.trim().toLowerCase();
+      return /^[0-9a-f]{64}$/.test(normalized) ? normalized : null;
+    }
+
+    function resetAuthToDefaults(statusMessage = "") {
+      authSettings = { username: DEFAULT_AUTH_USERNAME, passwordHash: DEFAULT_AUTH_PASSWORD_HASH };
+      saveAuthSettings();
+      updateAuthOverlayFields();
+
+      const authUserInput = document.getElementById("portal-auth-user");
+      const authPassInput = document.getElementById("portal-auth-pass");
+      if (authUserInput) authUserInput.value = authSettings.username;
+      if (authPassInput) authPassInput.value = "";
+
+      clearAuthCookie();
+      const statusEl = document.getElementById("auth-status");
+      if (statusEl && statusMessage) {
+        statusEl.innerHTML = `<span class="ok">${statusMessage}</span>`;
+      }
+    }
+
     function ensureAuthDefaultsPersisted() {
       let updated = false;
       if (!authSettings.username) {
         authSettings.username = DEFAULT_AUTH_USERNAME;
         updated = true;
       }
-      if (
-        !authSettings.passwordHash ||
-        typeof authSettings.passwordHash !== "string" ||
-        authSettings.passwordHash.length !== 64
-      ) {
+      const normalizedHash = normalizePasswordHash(authSettings.passwordHash);
+      if (!normalizedHash) {
         authSettings.passwordHash = DEFAULT_AUTH_PASSWORD_HASH;
+        updated = true;
+      } else if (normalizedHash !== authSettings.passwordHash) {
+        authSettings.passwordHash = normalizedHash;
         updated = true;
       }
       if (updated) {
         saveAuthSettings();
       }
-    async function hashPassword(value) {
-      const data = new TextEncoder().encode(value);
-      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
     }
 
     async function loadAuthSettings() {
@@ -1774,6 +1803,14 @@
             authSettings.passwordHash = await hashPassword(authSettings.password);
             delete authSettings.password;
             saveAuthSettings();
+          }
+
+          const normalizedHash = normalizePasswordHash(authSettings.passwordHash);
+          if (!normalizedHash) {
+            authSettings.passwordHash = DEFAULT_AUTH_PASSWORD_HASH;
+            saveAuthSettings();
+          } else {
+            authSettings.passwordHash = normalizedHash;
           }
 
           if (!authSettings.username) {
@@ -1869,7 +1906,6 @@
         passInput.type = "password";
         if (clearPassword) passInput.value = "";
       }
-      if (passInput && clearPassword) passInput.value = "";
     }
 
     function showAuthOverlay(message = "") {
@@ -1899,8 +1935,18 @@
       const userInput = document.getElementById("auth-username");
       const passInput = document.getElementById("auth-password");
       const statusEl = document.getElementById("auth-status");
+      const resetBtn = document.getElementById("auth-reset-btn");
 
       if (!form || !userInput || !passInput) return;
+
+      if (resetBtn) {
+        resetBtn.addEventListener("click", () => {
+          const message =
+            "Identifiants réinitialisés. Connecte-toi avec <strong>admin</strong> / <strong>admin</strong>.";
+          resetAuthToDefaults(message);
+          showAuthOverlay(`<span class="ok">${message}</span>`);
+        });
+      }
 
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -1916,9 +1962,20 @@
 
         ensureAuthDefaultsPersisted();
 
+        const storedHash = normalizePasswordHash(authSettings.passwordHash);
+        if (!storedHash) {
+          resetAuthToDefaults(
+            "Identifiants corrompus réinitialisés. Utilise <strong>admin</strong> / <strong>admin</strong>."
+          );
+          updateAuthOverlayFields();
+          return;
+        }
+
+        authSettings.passwordHash = storedHash;
+
         const passwordHash = await hashPassword(password);
 
-        if (username === authSettings.username && passwordHash === authSettings.passwordHash) {
+        if (username === authSettings.username && passwordHash === storedHash) {
           setAuthCookieForDay();
           if (statusEl) {
             statusEl.innerHTML = '<span class="ok">Connexion réussie. Bon retour !</span>';
@@ -2584,7 +2641,8 @@
         let passwordChanged = false;
         authSettings.username = authUser;
         if (authPass) {
-          authSettings.passwordHash = await hashPassword(authPass);
+          const hashed = await hashPassword(authPass);
+          authSettings.passwordHash = normalizePasswordHash(hashed) || DEFAULT_AUTH_PASSWORD_HASH;
           passwordChanged = true;
         }
 
