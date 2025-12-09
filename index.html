@@ -1,0 +1,2201 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Homelab Portal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --bg: #050712;
+      --accent: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.4);
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --danger: #f97373;
+      --radius-xl: 18px;
+      --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.45);
+      --transition-fast: 0.18s ease-out;
+      --glass: rgba(15, 23, 42, 0.75);
+      --border-subtle: rgba(148, 163, 184, 0.15);
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #050712;
+      --accent: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.4);
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --glass: rgba(15, 23, 42, 0.78);
+      --border-subtle: rgba(148, 163, 184, 0.25);
+    }
+
+    :root[data-theme="neon"] {
+      --bg: #020617;
+      --accent: #a855f7;
+      --accent-soft: rgba(168, 85, 247, 0.5);
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --glass: radial-gradient(circle at top left, rgba(15,23,42,0.95), #020617);
+      --border-subtle: rgba(168, 85, 247, 0.45);
+    }
+
+    :root[data-theme="minimal"] {
+      --bg: #020617;
+      --accent: #22c55e;
+      --accent-soft: rgba(34, 197, 94, 0.4);
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --glass: rgba(15, 23, 42, 0.9);
+      --border-subtle: rgba(148, 163, 184, 0.3);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text","Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #020617, #020617 40%, #000000);
+      color: var(--text);
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      padding: 24px;
+      min-height: 100vh;
+    }
+
+    .app-shell {
+      width: 100%;
+      max-width: 1200px;
+      background:
+        linear-gradient(135deg, rgba(56, 189, 248, 0.05), rgba(168, 85, 247, 0.03)),
+        radial-gradient(circle at top left, rgba(15, 23, 42, 0.9), #020617);
+      border-radius: 24px;
+      padding: 22px 24px 26px;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .matrix-bg {
+      position: absolute;
+      inset: 0;
+      opacity: 0.09;
+      pointer-events: none;
+      background-image: radial-gradient(circle at 1px 1px, var(--accent) 1px, transparent 0);
+      background-size: 18px 18px;
+      mix-blend-mode: screen;
+    }
+
+    .app-content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      max-height: calc(100vh - 48px);
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 14px;
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      padding-bottom: 10px;
+      background: linear-gradient(
+        to bottom,
+        rgba(15, 23, 42, 0.98),
+        rgba(15, 23, 42, 0.9),
+        rgba(15, 23, 42, 0.75),
+        transparent 95%
+      );
+      backdrop-filter: blur(10px);
+    }
+
+    .logo-circle {
+      width: 46px;
+      height: 46px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 20%, var(--accent), #0f172a);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 25px var(--accent-soft);
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .logo-circle::after {
+      content: "";
+      position: absolute;
+      inset: 1px;
+      border-radius: inherit;
+      border: 1px solid rgba(15, 23, 42, 0.6);
+    }
+
+    .logo-circle span {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #e5f2ff;
+      letter-spacing: 0.06em;
+    }
+
+    .logo-circle img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .title-block { flex: 1; min-width: 0; }
+
+    .title-block h1 {
+      margin: 0;
+      font-size: 1.6rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #e5e7eb;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .title-block p {
+      margin: 3px 0 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .title-block p span {
+      color: var(--accent);
+      text-shadow: 0 0 10px var(--accent-soft);
+    }
+
+    .top-actions {
+      margin-left: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: flex-end;
+      flex-shrink: 0;
+    }
+
+    .clock {
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+        Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.82rem;
+      color: var(--muted);
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+    }
+
+    .search-bar {
+      margin: 6px 0 10px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .search-wrapper { position: relative; flex: 1; }
+
+    .search-wrapper input {
+      width: 100%;
+      padding: 9px 11px 9px 32px;
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(15, 23, 42, 0.95);
+      color: var(--text);
+      font-size: 0.85rem;
+      outline: none;
+      transition: border var(--transition-fast), box-shadow var(--transition-fast),
+        background var(--transition-fast), transform var(--transition-fast);
+    }
+
+    .search-wrapper input::placeholder {
+      color: rgba(148, 163, 184, 0.7);
+    }
+
+    .search-wrapper input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent-soft);
+      background: #020617;
+      transform: translateY(-0.5px);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.85rem;
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    .quick-info {
+      font-size: 0.78rem;
+      color: var(--muted);
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px dashed rgba(148, 163, 184, 0.4);
+      background: rgba(15, 23, 42, 0.85);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .quick-info span {
+      color: var(--accent);
+      font-size: 0.88rem;
+    }
+
+    /* Bandeau caméras */
+    .camera-strip {
+      margin-bottom: 10px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .camera-card {
+      position: relative;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: rgba(15, 23, 42, 0.9);
+      cursor: pointer;
+      min-height: 70px;
+    }
+
+    .camera-card-inner {
+      position: relative;
+      width: 100%;
+      padding-top: 56%;
+      overflow: hidden;
+    }
+
+    .camera-card img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: brightness(0.9) contrast(1.02);
+      transition: transform var(--transition-fast), filter var(--transition-fast);
+    }
+
+    .camera-card:hover img {
+      transform: scale(1.03);
+      filter: brightness(1) contrast(1.05);
+    }
+
+    .camera-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to top,
+        rgba(15, 23, 42, 0.85),
+        transparent 60%
+      );
+      pointer-events: none;
+    }
+
+    .camera-label {
+      position: absolute;
+      left: 6px;
+      bottom: 4px;
+      font-size: 0.7rem;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      color: var(--text);
+      max-width: calc(100% - 12px);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .camera-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      color: var(--muted);
+      padding: 4px;
+      text-align: center;
+    }
+
+    /* Vue modale caméra */
+    .camera-modal-view {
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: #020617;
+      max-height: 60vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .camera-modal-view img {
+      max-width: 100%;
+      max-height: 60vh;
+      width: auto;
+      height: auto;
+      display: none;
+    }
+
+    #camera-modal-placeholder {
+      position: static;
+      inset: auto;
+      min-height: 120px;
+    }
+
+    /* Onglets */
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+      flex-shrink: 0;
+    }
+
+    .tab-btn {
+      padding: 5px 11px;
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--muted);
+      font-size: 0.78rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background var(--transition-fast), color var(--transition-fast),
+        border var(--transition-fast), transform var(--transition-fast),
+        box-shadow var(--transition-fast);
+    }
+
+    .tab-btn span { font-size: 0.85rem; }
+
+    .tab-btn.active {
+      background: radial-gradient(circle at top, var(--accent), #4f46e5);
+      color: #020617;
+      border-color: rgba(191, 219, 254, 0.9);
+      box-shadow: 0 0 14px var(--accent-soft);
+      transform: translateY(-1px);
+    }
+
+    .tab-btn:not(.active):hover {
+      border-color: var(--accent-soft);
+      color: var(--text);
+    }
+
+    main {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel {
+      border-radius: var(--radius-xl);
+      background: var(--glass);
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.65);
+      padding: 16px 16px 14px;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-primary { min-width: 270px; }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      flex-shrink: 0;
+    }
+
+    .panel-header h2 {
+      margin: 0;
+      font-size: 0.95rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(249, 250, 251, 0.9);
+    }
+
+    .panel-header h2 span { color: var(--accent); }
+
+    .panel-header small {
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+
+    .tiles-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .tiles-grid::-webkit-scrollbar { width: 6px; }
+    .tiles-grid::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.6);
+      border-radius: 999px;
+    }
+    .tiles-grid::-webkit-scrollbar-track { background: transparent; }
+
+    .tile {
+      position: relative;
+      border-radius: 16px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      padding: 9px 10px 9px;
+      background: radial-gradient(circle at top left, #0b1120, #020617);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      cursor: pointer;
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast),
+        border-color var(--transition-fast), background var(--transition-fast),
+        translate var(--transition-fast);
+      text-align: left;
+    }
+
+    .tile:hover {
+      transform: translateY(-3px) scale(1.01);
+      box-shadow: 0 18px 35px rgba(15, 23, 42, 0.8);
+      border-color: var(--accent);
+      background: radial-gradient(circle at top, #0b1120, #020617);
+    }
+
+    .tile-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tile-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      background: radial-gradient(circle at top left, var(--accent), #0f172a);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      color: #e5f2ff;
+      overflow: hidden;
+      flex-shrink: 0;
+      border: 1px solid rgba(15, 23, 42, 0.8);
+    }
+
+    .tile-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .tile-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #f9fafb;
+    }
+
+    .tile-sub {
+      font-size: 0.74rem;
+      color: var(--muted);
+    }
+
+    .chip {
+      align-self: flex-start;
+      margin-top: 2px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border: 1px solid var(--accent-soft);
+      color: #7dd3fc;
+      background: rgba(8, 47, 73, 0.4);
+    }
+
+    .tile-edit {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      background: rgba(15, 23, 42, 0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      color: var(--muted);
+      opacity: 0;
+      transform: translateY(-3px);
+      pointer-events: none;
+      transition: opacity var(--transition-fast), transform var(--transition-fast),
+        background var(--transition-fast), color var(--transition-fast),
+        border var(--transition-fast);
+    }
+
+    .tile:hover .tile-edit {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .tile-edit:hover {
+      background: radial-gradient(circle at top, var(--accent), #4f46e5);
+      color: #020617;
+      border-color: rgba(191, 219, 254, 0.9);
+    }
+
+    .tile-status-dot {
+      position: absolute;
+      bottom: 6px;
+      right: 8px;
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: #6b7280;
+      box-shadow: 0 0 0 0 rgba(148, 163, 184, 0.5);
+    }
+
+    .tile-status-up {
+      background: #22c55e;
+      box-shadow: 0 0 6px 0 rgba(34, 197, 94, 0.9);
+      animation: pulse-up 2s infinite;
+    }
+
+    .tile-status-down {
+      background: #ef4444;
+      box-shadow: 0 0 6px 0 rgba(239, 68, 68, 0.9);
+      animation: pulse-down 1.5s infinite;
+    }
+
+    .tile-status-unknown {
+      background: #6b7280;
+      box-shadow: 0 0 4px 0 rgba(107, 114, 128, 0.8);
+    }
+
+    @keyframes pulse-up {
+      0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+      70% { box-shadow: 0 0 0 7px rgba(34, 197, 94, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+    }
+
+    @keyframes pulse-down {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      70% { box-shadow: 0 0 0 7px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+
+    footer {
+      margin-top: 10px;
+      font-size: 0.7rem;
+      color: rgba(148, 163, 184, 0.75);
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+
+    footer span { opacity: 0.85; }
+    footer span strong { color: var(--accent); }
+
+    .fab {
+      position: absolute;
+      right: 20px;
+      bottom: 20px;
+      width: 46px;
+      height: 46px;
+      border-radius: 999px;
+      border: 1px solid rgba(191, 219, 254, 0.8);
+      background: radial-gradient(circle at top, var(--accent), #4f46e5);
+      color: #020617;
+      font-size: 1.7rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 26px var(--accent-soft);
+      cursor: pointer;
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+      z-index: 5;
+    }
+
+    .fab:hover {
+      transform: translateY(-2px) scale(1.03);
+      box-shadow: 0 0 32px var(--accent-soft);
+    }
+
+    .settings-btn {
+      position: absolute;
+      right: 78px;
+      bottom: 22px;
+      width: 38px;
+      height: 38px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.8);
+      background: rgba(15, 23, 42, 0.96);
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.9);
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast),
+        background var(--transition-fast), color var(--transition-fast),
+        border var(--transition-fast);
+      z-index: 5;
+    }
+
+    .settings-btn:hover {
+      transform: translateY(-1px);
+      background: radial-gradient(circle at top, #111827, #020617);
+      color: var(--accent);
+      border-color: var(--accent-soft);
+      box-shadow: 0 0 24px var(--accent-soft);
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    .modal-hidden { display: none; }
+
+    .modal-dialog {
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+      background: rgba(15, 23, 42, 0.96);
+      border-radius: 20px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.75);
+      padding: 18px 18px 16px;
+      position: relative;
+      margin: 10px;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 1rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #e5e7eb;
+    }
+
+    .modal-header h2 span { color: var(--accent); }
+
+    .modal-close {
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: rgba(15, 23, 42, 0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      color: var(--muted);
+      cursor: pointer;
+      transition: background var(--transition-fast), color var(--transition-fast),
+        transform var(--transition-fast), border var(--transition-fast);
+    }
+
+    .modal-close:hover {
+      background: rgba(127, 29, 29, 0.95);
+      color: #fecaca;
+      border-color: rgba(248, 113, 113, 0.8);
+      transform: rotate(8deg);
+    }
+
+    .modal-body { margin-bottom: 8px; }
+
+    .form-group { margin-bottom: 10px; }
+
+    .form-group label {
+      display: block;
+      font-size: 0.78rem;
+      margin-bottom: 4px;
+      color: rgba(209, 213, 219, 0.9);
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="url"],
+    .form-group select {
+      width: 100%;
+      padding: 7px 9px;
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      background: rgba(15, 23, 42, 0.95);
+      color: var(--text);
+      font-size: 0.8rem;
+      outline: none;
+      transition: border var(--transition-fast), box-shadow var(--transition-fast),
+        background var(--transition-fast), transform var(--transition-fast);
+    }
+
+    .form-group input::placeholder { color: rgba(148, 163, 184, 0.7); }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent-soft);
+      background: #020617;
+      transform: translateY(-0.5px);
+    }
+
+    .file-input-wrapper {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.76rem;
+      color: var(--muted);
+    }
+
+    .file-input-wrapper input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .file-label {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px dashed rgba(148, 163, 184, 0.7);
+      background: rgba(15, 23, 42, 0.9);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .file-label span { font-size: 0.85rem; }
+
+    .file-hint {
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .btn-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border-radius: 999px;
+      border: none;
+      padding: 7px 14px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast),
+        background var(--transition-fast), opacity var(--transition-fast),
+        border var(--transition-fast);
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: radial-gradient(circle at top, var(--accent), #4f46e5);
+      color: #0b1020;
+      box-shadow: 0 0 18px var(--accent-soft);
+      font-weight: 600;
+      border: 1px solid rgba(191, 219, 254, 0.7);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 26px var(--accent-soft);
+    }
+
+    .btn-secondary {
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--muted);
+      border: 1px solid rgba(148, 163, 184, 0.6);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(30, 64, 175, 0.7);
+      color: #e5e7eb;
+    }
+
+    .btn-danger {
+      background: rgba(127, 29, 29, 0.9);
+      color: #fecaca;
+      border: 1px solid rgba(248, 113, 113, 0.7);
+    }
+
+    .btn-danger:hover {
+      background: rgba(185, 28, 28, 0.95);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: none;
+      padding: 0;
+      font-size: 0.74rem;
+      cursor: pointer;
+    }
+
+    .btn-ghost span { text-decoration: underline dotted; }
+
+    .status {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    .status span.ok { color: #4ade80; }
+    .status span.err { color: var(--danger); }
+
+    .modal-footer-actions {
+      margin-top: 8px;
+      font-size: 0.7rem;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .modal-footer-actions code { font-size: 0.7rem; }
+
+    @media (max-width: 900px) {
+      body { padding: 14px; }
+
+      .app-shell {
+        padding: 16px 14px 18px;
+        border-radius: 18px;
+      }
+
+      header { flex-wrap: wrap; }
+
+      .top-actions {
+        margin-left: 0;
+        align-items: flex-start;
+      }
+
+      .title-block h1 { font-size: 1.4rem; }
+      .title-block p { font-size: 0.8rem; }
+
+      .camera-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .modal-dialog {
+        max-width: 95vw;
+        max-height: 90vh;
+        margin: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <div class="matrix-bg"></div>
+    <div class="app-content">
+      <header>
+        <div class="logo-circle" id="logo-circle">
+          <span id="logo-text">HL</span>
+        </div>
+        <div class="title-block">
+          <h1 id="main-title">Homelab Control Hub</h1>
+          <p><span id="subtitle-span">Portail privé – services locaux &amp; containers</span></p>
+        </div>
+        <div class="top-actions">
+          <div class="clock" id="clock">--:--:--</div>
+        </div>
+      </header>
+
+      <div class="search-bar">
+        <div class="search-wrapper">
+          <span class="search-icon">🔍</span>
+          <input
+            type="text"
+            id="search"
+            placeholder="Filtrer les services (ex : proxmox, media, download...)"
+          />
+        </div>
+        <div class="quick-info">
+          <span>TIP</span> Tapes le nom du service pour le filtrer
+        </div>
+      </div>
+
+      <!-- Caméras -->
+      <div class="camera-strip" id="camera-strip"></div>
+
+      <!-- Onglets -->
+      <div class="tabs" id="tabs"></div>
+
+      <main>
+        <section class="panel panel-primary">
+          <div class="panel-header">
+            <h2><span>Services</span> &amp; Containers</h2>
+            <small>Cliquer pour ouvrir – survoler pour éditer</small>
+          </div>
+          <div class="tiles-grid" id="tiles"></div>
+        </section>
+      </main>
+
+      <footer>
+        <span>⚙️ Startpage homelab – 100% HTML/JS, sans backend.</span>
+        <span>🔐 Pense à servir cette page uniquement sur ton réseau interne.</span>
+      </footer>
+    </div>
+
+    <button class="fab" id="btn-open-modal" title="Ajouter un raccourci">+</button>
+    <button class="settings-btn" id="btn-open-settings" title="Paramètres du portail">⚙️</button>
+  </div>
+
+  <!-- Modal raccourcis -->
+  <div class="modal-backdrop modal-hidden" id="modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2 id="modal-title"><span>Ajouter</span> un raccourci</h2>
+        <button class="modal-close" id="modal-close" type="button">✕</button>
+      </div>
+      <form id="shortcut-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="name">Nom du service</label>
+            <input
+              type="text"
+              id="name"
+              placeholder="Ex : Grafana, Portainer, Backups..."
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="url">URL</label>
+            <input
+              type="url"
+              id="url"
+              placeholder="https://mon-service.local:xxxx"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="shortcut-tab">Onglet / Catégorie</label>
+            <select id="shortcut-tab"></select>
+          </div>
+          <div class="form-group">
+            <label>Logo (optionnel)</label>
+            <div class="file-input-wrapper">
+              <div class="file-label">
+                <span>📁 Choisir une image</span>
+              </div>
+              <input
+                type="file"
+                id="logo"
+                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+              />
+              <span id="file-name">(aucun fichier)</span>
+            </div>
+            <div class="file-hint">
+              Formats recommandés : PNG / JPG / WebP / SVG, taille max ~256 Ko, image plutôt carrée (ex : 128–256 px).
+            </div>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button type="submit" class="btn btn-primary">
+            <span>💾</span> Sauvegarder
+          </button>
+          <button type="button" class="btn btn-secondary" id="btn-new-reset-form">
+            <span>✨</span> Nouveau vierge
+          </button>
+          <button type="button" class="btn btn-danger" id="btn-delete" style="display:none;">
+            <span>🗑️</span> Supprimer ce raccourci
+          </button>
+        </div>
+        <div class="status" id="status"></div>
+        <div class="modal-footer-actions">
+          <button type="button" class="btn-ghost" id="btn-empty-all">
+            <span>Vider tous les raccourcis</span>
+          </button>
+          <button type="button" class="btn-ghost" id="btn-restore-defaults">
+            <span>Restaurer les raccourcis par défaut</span>
+          </button>
+        </div>
+        <div class="modal-footer-actions">
+          <span>💡 Tout est stocké dans <code>localStorage</code> de ce navigateur.</span>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal paramètres portail + caméras -->
+  <div class="modal-backdrop modal-hidden" id="settings-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2><span>Paramètres</span> du portail</h2>
+        <button class="modal-close" id="settings-close" type="button">✕</button>
+      </div>
+      <form id="settings-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="portal-title-input">Titre du portail</label>
+            <input
+              type="text"
+              id="portal-title-input"
+              placeholder="Ex : Homelab Control Hub"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="portal-subtitle-input">Sous-titre</label>
+            <input
+              type="text"
+              id="portal-subtitle-input"
+              placeholder="Ex : Portail privé – services locaux &amp; containers"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="portal-logo-text">Texte du logo (si pas d'image)</label>
+            <input
+              type="text"
+              id="portal-logo-text"
+              placeholder="Ex : HL, DC, 🧠..."
+            />
+          </div>
+          <div class="form-group">
+            <label>Logo image (optionnel)</label>
+            <div class="file-input-wrapper">
+              <div class="file-label">
+                <span>📁 Choisir un logo</span>
+              </div>
+              <input
+                type="file"
+                id="portal-logo-file"
+                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+              />
+              <span id="portal-logo-filename">(aucun fichier)</span>
+            </div>
+            <div class="file-hint">
+              Formats recommandés : PNG / JPG / WebP / SVG, taille max ~256 Ko, image plutôt carrée (ex : 128–256 px).
+              Si aucune image n’est choisie, le texte du logo est utilisé.
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="portal-theme-select">Thème visuel</label>
+            <select id="portal-theme-select">
+              <option value="dark">Sombre classique</option>
+              <option value="neon">Néon / Cyber</option>
+              <option value="minimal">Minimal</option>
+            </select>
+          </div>
+
+          <hr style="border: none; border-top: 1px solid rgba(148,163,184,0.4); margin: 10px 0;" />
+
+          <div class="form-group">
+            <label>Caméras (HTTP snapshot / flux)</label>
+            <div class="file-hint">
+              Les navigateurs ne lisent pas directement le RTSP. Utilise ici des URL HTTP
+              (snapshot, MJPEG, HLS via Frigate / NVR / Home Assistant, etc.).  
+              Le clic sur la vignette ouvre maintenant une vue détaillée, avec un bouton pour ouvrir la page NVR / Frigate dans un nouvel onglet.
+            </div>
+          </div>
+
+          <div id="camera-settings-fields"></div>
+        </div>
+
+        <div class="btn-row">
+          <button type="submit" class="btn btn-primary">
+            <span>💾</span> Sauvegarder le bandeau & les caméras
+          </button>
+          <button type="button" class="btn btn-secondary" id="btn-reset-title">
+            <span>♻️</span> Valeurs par défaut
+          </button>
+        </div>
+        <div class="status" id="settings-status"></div>
+        <div class="modal-footer-actions">
+          <span>🧠 Ces réglages sont aussi gardés dans <code>localStorage</code>.</span>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal vue caméra plein écran -->
+  <div class="modal-backdrop modal-hidden" id="camera-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2><span>Caméra</span> <span id="camera-modal-name"></span></h2>
+        <button class="modal-close" id="camera-modal-close" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="camera-modal-view">
+          <!-- pixel transparent par défaut pour Phoenix -->
+          <img
+            id="camera-modal-img"
+            alt="Flux caméra"
+            src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
+          />
+          <div id="camera-modal-placeholder" class="camera-placeholder">
+            Configure l’URL snapshot HTTP de cette caméra dans les paramètres pour afficher un aperçu ici.
+          </div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button type="button" class="btn btn-primary" id="camera-modal-open-tab">
+          <span>🔗</span> Ouvrir dans un nouvel onglet
+        </button>
+        <button type="button" class="btn btn-secondary" id="camera-modal-close-bottom">
+          <span>✕</span> Fermer
+        </button>
+      </div>
+      <div class="status" id="camera-modal-status"></div>
+    </div>
+  </div>
+
+  <script>
+    const MAX_IMAGE_SIZE = 256 * 1024;
+    const HEALTH_CHECK_INTERVAL = 20000;
+    const CAMERA_MODAL_REFRESH_INTERVAL = 1000; // 1 seconde
+
+    const TABS = [
+      { id: "all", label: "Tous", icon: "✨" },
+      { id: "core", label: "Serveurs", icon: "🧬" },
+      { id: "ai", label: "IA", icon: "🧠" },
+      { id: "camera", label: "Caméras", icon: "📹" },
+      { id: "domotic", label: "Domotique", icon: "🏠" },
+      { id: "media", label: "Médias", icon: "🎬" },
+      { id: "network", label: "Réseau", icon: "🌐" },
+      { id: "custom", label: "Custom", icon: "⭐" },
+    ];
+
+    const defaultLinksBase = [
+      {
+        name: "Proxmox",
+        url: "https://proxmox.local:8006",
+        description: "Hyperviseur & VM / LXC",
+        chip: "Core",
+        icon: "🧬",
+        tab: "core",
+      },
+      {
+        name: "Zoraxy",
+        url: "https://zoraxy.local",
+        description: "Reverse proxy / SSO",
+        chip: "Edge",
+        icon: "🛡️",
+        tab: "network",
+      },
+      {
+        name: "Docker / Portainer",
+        url: "https://docker.local:9443",
+        description: "Stacks & containers",
+        chip: "Docker",
+        icon: "🐋",
+        tab: "core",
+      },
+      {
+        name: "Transmission",
+        url: "https://transmission.local",
+        description: "Downloads & torrents",
+        chip: "Media",
+        icon: "📡",
+        tab: "media",
+      },
+      {
+        name: "Emby",
+        url: "https://emby.local:8096",
+        description: "Serveur multimédia",
+        chip: "Media",
+        icon: "🎬",
+        tab: "media",
+      },
+      {
+        name: "Home Assistant",
+        url: "https://ha.local:8123",
+        description: "Domotique / IoT",
+        chip: "SmartHome",
+        icon: "🏠",
+        tab: "domotic",
+      },
+      {
+        name: "Frigate",
+        url: "https://frigate.local",
+        description: "NVR & détection IA",
+        chip: "Caméra",
+        icon: "📹",
+        tab: "camera",
+      },
+      {
+        name: "OpenWebUI / IA",
+        url: "https://ai.local",
+        description: "Interface IA locale",
+        chip: "AI",
+        icon: "🧠",
+        tab: "ai",
+      },
+    ];
+
+    const STORAGE_KEY = "homelab-links-v3";
+    const TITLE_STORAGE_KEY = "homelab-title-v2";
+    const TAB_STORAGE_KEY = "homelab-active-tab-v1";
+
+    let links = [];
+    let currentEditId = null;
+    let logoDataUrl = null;
+    let statusDots = {};
+
+    let uiState = { activeTab: "all" };
+
+    let titleSettings = {
+      title: "Homelab Control Hub",
+      subtitle: "Portail privé – services locaux & containers",
+      logoText: "HL",
+      logoImage: null,
+      theme: "dark",
+      cameras: [
+        { name: "Entrée", snapshotUrl: "", clickUrl: "" },
+        { name: "Jardin", snapshotUrl: "", clickUrl: "" },
+        { name: "Garage", snapshotUrl: "", clickUrl: "" },
+        { name: "Salon", snapshotUrl: "", clickUrl: "" },
+      ],
+    };
+
+    let portalLogoDataUrl = null;
+
+    let currentCameraModal = {
+      name: "",
+      snapshotUrl: "",
+      clickUrl: "",
+    };
+    let cameraModalIntervalId = null;
+
+    function loadLinks() {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          links = parsed.map((l, index) => ({
+            ...l,
+            id: l.id || "migrated-" + index,
+            tab: l.tab || "custom",
+          }));
+        } else {
+          links = defaultLinksBase.map((l, index) => ({
+            ...l,
+            id: "default-" + index,
+          }));
+          saveLinks();
+        }
+      } catch (e) {
+        console.error("Erreur de lecture localStorage (links)", e);
+        links = defaultLinksBase.map((l, index) => ({
+          ...l,
+          id: "default-" + index,
+        }));
+      }
+    }
+
+    function saveLinks() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(links));
+      } catch (e) {
+        console.error("Erreur d'écriture localStorage (links)", e);
+      }
+    }
+
+    function loadTitleSettings() {
+      try {
+        const stored = localStorage.getItem(TITLE_STORAGE_KEY);
+        if (stored) {
+          const obj = JSON.parse(stored);
+          titleSettings = {
+            ...titleSettings,
+            ...obj,
+            cameras: obj.cameras || titleSettings.cameras,
+          };
+        }
+      } catch (e) {
+        console.error("Erreur de lecture localStorage (title)", e);
+      }
+    }
+
+    function saveTitleSettings() {
+      try {
+        localStorage.setItem(TITLE_STORAGE_KEY, JSON.stringify(titleSettings));
+      } catch (e) {
+        console.error("Erreur d'écriture localStorage (title)", e);
+      }
+    }
+
+    function applyTheme() {
+      const theme = titleSettings.theme || "dark";
+      document.documentElement.setAttribute("data-theme", theme);
+    }
+
+    function applyTitleSettings() {
+      const titleEl = document.getElementById("main-title");
+      const subtitleEl = document.getElementById("subtitle-span");
+      const logoCircle = document.getElementById("logo-circle");
+
+      if (titleEl) titleEl.textContent = titleSettings.title || "";
+      if (subtitleEl) subtitleEl.textContent = titleSettings.subtitle || "";
+
+      if (logoCircle) {
+        logoCircle.innerHTML = "";
+        if (titleSettings.logoImage) {
+          const img = document.createElement("img");
+          img.src = titleSettings.logoImage;
+          img.alt = titleSettings.logoText || "Logo";
+          logoCircle.appendChild(img);
+        } else {
+          const span = document.createElement("span");
+          span.id = "logo-text";
+          span.textContent = titleSettings.logoText || "HL";
+          logoCircle.appendChild(span);
+        }
+      }
+    }
+
+    function loadTabState() {
+      try {
+        const stored = localStorage.getItem(TAB_STORAGE_KEY);
+        if (stored && TABS.some(t => t.id === stored)) {
+          uiState.activeTab = stored;
+        }
+      } catch (e) {
+        console.error("Erreur de lecture localStorage (tab)", e);
+      }
+    }
+
+    function saveTabState() {
+      try {
+        localStorage.setItem(TAB_STORAGE_KEY, uiState.activeTab);
+      } catch (e) {
+        console.error("Erreur d'écriture localStorage (tab)", e);
+      }
+    }
+
+    function renderTabs() {
+      const container = document.getElementById("tabs");
+      container.innerHTML = "";
+
+      TABS.forEach(tab => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "tab-btn" + (tab.id === uiState.activeTab ? " active" : "");
+        btn.dataset.tab = tab.id;
+        btn.innerHTML = `<span>${tab.icon}</span>${tab.label}`;
+        btn.addEventListener("click", () => {
+          uiState.activeTab = tab.id;
+          saveTabState();
+          renderTabs();
+          renderTiles(document.getElementById("search").value || "");
+        });
+        container.appendChild(btn);
+      });
+    }
+
+    function createTile(link) {
+      const tile = document.createElement("div");
+      tile.className = "tile";
+      tile.setAttribute(
+        "data-search",
+        ((link.name || "") + " " + (link.description || "")).toLowerCase()
+      );
+
+      tile.addEventListener("click", () => {
+        if (!link.url) return;
+        window.open(link.url, "_blank", "noopener,noreferrer");
+      });
+
+      const header = document.createElement("div");
+      header.className = "tile-header";
+
+      const logo = document.createElement("div");
+      logo.className = "tile-logo";
+
+      if (link.icon && typeof link.icon === "string" && link.icon.startsWith("data:image")) {
+        const img = document.createElement("img");
+        img.src = link.icon;
+        img.alt = link.name || "logo";
+        logo.appendChild(img);
+      } else {
+        logo.textContent = link.icon || (link.name ? link.name[0] : "?");
+      }
+
+      const titleBox = document.createElement("div");
+      const title = document.createElement("div");
+      title.className = "tile-title";
+      title.textContent = link.name || "Service";
+
+      const sub = document.createElement("div");
+      sub.className = "tile-sub";
+      sub.textContent = link.description || link.url || "";
+
+      titleBox.appendChild(title);
+      titleBox.appendChild(sub);
+
+      header.appendChild(logo);
+      header.appendChild(titleBox);
+
+      tile.appendChild(header);
+
+      if (link.chip) {
+        const chip = document.createElement("div");
+        chip.className = "chip";
+        chip.textContent = link.chip;
+        tile.appendChild(chip);
+      }
+
+      const editBtn = document.createElement("button");
+      editBtn.type = "button";
+      editBtn.className = "tile-edit";
+      editBtn.title = "Modifier ce raccourci";
+      editBtn.textContent = "✏️";
+      editBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        openShortcutModal("edit", link.id);
+      });
+      tile.appendChild(editBtn);
+
+      const statusDot = document.createElement("div");
+      statusDot.className = "tile-status-dot tile-status-unknown";
+      statusDot.title = "État : inconnu";
+      tile.appendChild(statusDot);
+      statusDots[link.id] = statusDot;
+
+      return tile;
+    }
+
+    function renderTiles(filter = "") {
+      const container = document.getElementById("tiles");
+      container.innerHTML = "";
+      statusDots = {};
+      const f = filter.trim().toLowerCase();
+
+      links.forEach((link) => {
+        const tab = link.tab || "custom";
+        if (uiState.activeTab !== "all" && tab !== uiState.activeTab) {
+          return;
+        }
+        const hay = (link.name || "") + " " + (link.description || "");
+        if (f && !hay.toLowerCase().includes(f)) {
+          return;
+        }
+        const tile = createTile(link);
+        container.appendChild(tile);
+      });
+
+      if (!container.children.length) {
+        const msg = document.createElement("div");
+        msg.style.fontSize = "0.8rem";
+        msg.style.color = "var(--muted)";
+        msg.style.padding = "8px";
+        msg.textContent =
+          "Aucun service pour cet onglet / filtre. Ajoute un raccourci avec le + en bas à droite ou restaure les valeurs par défaut.";
+        container.appendChild(msg);
+      }
+    }
+
+    function updateClock() {
+      const el = document.getElementById("clock");
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, "0");
+      const mm = String(now.getMinutes()).padStart(2, "0");
+      const ss = String(now.getSeconds()).padStart(2, "0");
+      el.textContent = `${hh}:${mm}:${ss}`;
+    }
+
+    function populateTabSelect() {
+      const select = document.getElementById("shortcut-tab");
+      select.innerHTML = "";
+      TABS.filter(t => t.id !== "all").forEach(tab => {
+        const opt = document.createElement("option");
+        opt.value = tab.id;
+        opt.textContent = tab.label;
+        select.appendChild(opt);
+      });
+    }
+
+    function openShortcutModal(mode = "new", id = null) {
+      const modal = document.getElementById("modal");
+      const titleEl = document.getElementById("modal-title");
+      const deleteBtn = document.getElementById("btn-delete");
+      const status = document.getElementById("status");
+      const fileNameEl = document.getElementById("file-name");
+      const form = document.getElementById("shortcut-form");
+      const inputName = document.getElementById("name");
+      const inputUrl = document.getElementById("url");
+      const tabSelect = document.getElementById("shortcut-tab");
+
+      logoDataUrl = null;
+      status.innerHTML = "";
+      fileNameEl.textContent = "(aucun fichier)";
+      form.reset();
+
+      if (mode === "edit" && id) {
+        const link = links.find((l) => l.id === id);
+        if (!link) return;
+
+        currentEditId = id;
+        titleEl.innerHTML = '<span>Modifier</span> le raccourci';
+        inputName.value = link.name || "";
+        inputUrl.value = link.url || "";
+        tabSelect.value = link.tab || "custom";
+        deleteBtn.style.display = "inline-flex";
+      } else {
+        currentEditId = null;
+        titleEl.innerHTML = '<span>Ajouter</span> un raccourci';
+        deleteBtn.style.display = "none";
+        tabSelect.value = uiState.activeTab !== "all" ? uiState.activeTab : "custom";
+      }
+
+      modal.classList.remove("modal-hidden");
+    }
+
+    function closeShortcutModal() {
+      const modal = document.getElementById("modal");
+      modal.classList.add("modal-hidden");
+      currentEditId = null;
+      logoDataUrl = null;
+    }
+
+    function setupShortcutForm() {
+      const form = document.getElementById("shortcut-form");
+      const inputName = document.getElementById("name");
+      const inputUrl = document.getElementById("url");
+      const tabSelect = document.getElementById("shortcut-tab");
+      const inputLogo = document.getElementById("logo");
+      const fileName = document.getElementById("file-name");
+      const status = document.getElementById("status");
+      const btnNewResetForm = document.getElementById("btn-new-reset-form");
+      const btnDelete = document.getElementById("btn-delete");
+      const btnEmptyAll = document.getElementById("btn-empty-all");
+      const btnRestoreDefaults = document.getElementById("btn-restore-defaults");
+
+      inputLogo.addEventListener("change", () => {
+        const file = inputLogo.files && inputLogo.files[0];
+        if (!file) {
+          fileName.textContent = "(aucun fichier)";
+          logoDataUrl = null;
+          return;
+        }
+        if (file.size > MAX_IMAGE_SIZE) {
+          status.innerHTML =
+            '<span class="err">Fichier trop gros (max ~256 Ko). Choisis une image plus légère.</span>';
+          inputLogo.value = "";
+          fileName.textContent = "(aucun fichier)";
+          logoDataUrl = null;
+          return;
+        }
+        fileName.textContent = file.name;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          logoDataUrl = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const name = inputName.value.trim();
+        const url = inputUrl.value.trim();
+        const tab = tabSelect.value || "custom";
+
+        if (!name || !url) {
+          status.innerHTML =
+            '<span class="err">Merci de remplir au moins le nom et l’URL.</span>';
+          return;
+        }
+
+        if (currentEditId) {
+          const index = links.findIndex((l) => l.id === currentEditId);
+          if (index !== -1) {
+            const existing = links[index];
+            links[index] = {
+              ...existing,
+              name,
+              url,
+              description: existing.description || url,
+              icon: logoDataUrl || existing.icon,
+              tab,
+            };
+          }
+          status.innerHTML =
+            '<span class="ok">Raccourci mis à jour avec succès.</span>';
+        } else {
+          const newLink = {
+            id: "link-" + Date.now() + "-" + Math.floor(Math.random() * 1e5),
+            name,
+            url,
+            description: url,
+            chip: "Custom",
+            icon: logoDataUrl || "⭐",
+            tab,
+          };
+          links.push(newLink);
+          status.innerHTML =
+            '<span class="ok">Nouveau raccourci ajouté !</span>';
+        }
+
+        saveLinks();
+        renderTiles(document.getElementById("search").value || "");
+      });
+
+      btnNewResetForm.addEventListener("click", () => {
+        form.reset();
+        logoDataUrl = null;
+        fileName.textContent = "(aucun fichier)";
+        currentEditId = null;
+        document.getElementById("modal-title").innerHTML =
+          '<span>Ajouter</span> un raccourci';
+        btnDelete.style.display = "none";
+        status.innerHTML = "";
+        tabSelect.value = uiState.activeTab !== "all" ? uiState.activeTab : "custom";
+      });
+
+      btnDelete.addEventListener("click", () => {
+        if (!currentEditId) return;
+        if (!confirm("Supprimer définitivement ce raccourci de ta startpage ?")) {
+          return;
+        }
+        links = links.filter((l) => l.id !== currentEditId);
+        saveLinks();
+        renderTiles(document.getElementById("search").value || "");
+        closeShortcutModal();
+      });
+
+      btnEmptyAll.addEventListener("click", () => {
+        if (!links.length ||
+          !confirm("Tu es sûr ? Tous les raccourcis vont être supprimés. La grille sera totalement vide.")
+        ) {
+          return;
+        }
+        links = [];
+        saveLinks();
+        renderTiles(document.getElementById("search").value || "");
+        status.innerHTML =
+          '<span class="ok">Tous les raccourcis ont été vidés. Tu peux en recréer ou restaurer les valeurs par défaut.</span>';
+      });
+
+      btnRestoreDefaults.addEventListener("click", () => {
+        if (!confirm("Restaurer les raccourcis par défaut écrasera la liste actuelle. Continuer ?")) {
+          return;
+        }
+        links = defaultLinksBase.map((l, index) => ({
+          ...l,
+          id: "default-" + index,
+        }));
+        saveLinks();
+        renderTiles(document.getElementById("search").value || "");
+        status.innerHTML =
+          '<span class="ok">Raccourcis par défaut restaurés.</span>';
+      });
+    }
+
+    function buildCameraSettingsFields() {
+      const container = document.getElementById("camera-settings-fields");
+      container.innerHTML = "";
+      titleSettings.cameras.forEach((cam, index) => {
+        const wrap = document.createElement("div");
+        wrap.className = "form-group";
+        wrap.innerHTML = `
+          <label>Caméra ${index + 1}</label>
+          <input
+            type="text"
+            id="camera-name-${index}"
+            placeholder="Nom (ex : Entrée)"
+            style="margin-bottom:4px;"
+          />
+          <input
+            type="url"
+            id="camera-snapshot-${index}"
+            placeholder="URL snapshot / flux HTTP (ex : http://nvr/snap.jpg)"
+            style="margin-bottom:4px;"
+          />
+          <input
+            type="url"
+            id="camera-click-${index}"
+            placeholder="URL au clic (ex : page NVR / Frigate)"
+          />
+        `;
+        container.appendChild(wrap);
+      });
+    }
+
+    function renderCameras() {
+      const strip = document.getElementById("camera-strip");
+      strip.innerHTML = "";
+      titleSettings.cameras.forEach((cam, index) => {
+        const card = document.createElement("div");
+        card.className = "camera-card";
+
+        card.addEventListener("click", () => {
+          openCameraModal(cam);
+        });
+
+        const inner = document.createElement("div");
+        inner.className = "camera-card-inner";
+
+        if (cam.snapshotUrl) {
+          const img = document.createElement("img");
+          img.dataset.base = cam.snapshotUrl;
+          img.alt = cam.name || "Caméra " + (index + 1);
+          img.addEventListener("error", () => {
+            img.style.display = "none";
+          });
+          inner.appendChild(img);
+        } else {
+          const placeholder = document.createElement("div");
+          placeholder.className = "camera-placeholder";
+          placeholder.textContent =
+            "Configure cette caméra dans les paramètres (snapshot HTTP / page NVR).";
+          inner.appendChild(placeholder);
+        }
+
+        const overlay = document.createElement("div");
+        overlay.className = "camera-overlay";
+
+        const label = document.createElement("div");
+        label.className = "camera-label";
+        label.textContent = cam.name || `Caméra ${index + 1}`;
+
+        card.appendChild(inner);
+        card.appendChild(overlay);
+        card.appendChild(label);
+
+        strip.appendChild(card);
+      });
+
+      refreshCameraSnapshots(true);
+    }
+
+    function refreshCameraSnapshots(initial = false) {
+      const imgs = document.querySelectorAll(".camera-card img");
+      imgs.forEach((img) => {
+        const base = img.dataset.base;
+        if (!base) return;
+        const sep = base.includes("?") ? "&" : "?";
+        const url = initial ? base : `${base}${sep}t=${Date.now()}`;
+        img.src = url;
+        img.style.display = "block";
+      });
+    }
+
+    function openSettingsModal() {
+      const modal = document.getElementById("settings-modal");
+      const titleInput = document.getElementById("portal-title-input");
+      const subtitleInput = document.getElementById("portal-subtitle-input");
+      const logoTextInput = document.getElementById("portal-logo-text");
+      const fileNameEl = document.getElementById("portal-logo-filename");
+      const themeSelect = document.getElementById("portal-theme-select");
+      const status = document.getElementById("settings-status");
+
+      titleInput.value = titleSettings.title || "";
+      subtitleInput.value = titleSettings.subtitle || "";
+      logoTextInput.value = titleSettings.logoText || "HL";
+      themeSelect.value = titleSettings.theme || "dark";
+
+      portalLogoDataUrl = null;
+      status.innerHTML = "";
+
+      if (titleSettings.logoImage) {
+        fileNameEl.textContent = "(logo actuel chargé)";
+      } else {
+        fileNameEl.textContent = "(aucun fichier)";
+      }
+
+      titleSettings.cameras.forEach((cam, index) => {
+        const nameEl = document.getElementById(`camera-name-${index}`);
+        const snapEl = document.getElementById(`camera-snapshot-${index}`);
+        const clickEl = document.getElementById(`camera-click-${index}`);
+        if (!nameEl || !snapEl || !clickEl) return;
+        nameEl.value = cam.name || "";
+        snapEl.value = cam.snapshotUrl || "";
+        clickEl.value = cam.clickUrl || "";
+      });
+
+      modal.classList.remove("modal-hidden");
+    }
+
+    function closeSettingsModal() {
+      const modal = document.getElementById("settings-modal");
+      modal.classList.add("modal-hidden");
+      portalLogoDataUrl = null;
+    }
+
+    function setupSettingsForm() {
+      const form = document.getElementById("settings-form");
+      const titleInput = document.getElementById("portal-title-input");
+      const subtitleInput = document.getElementById("portal-subtitle-input");
+      const logoTextInput = document.getElementById("portal-logo-text");
+      const logoFileInput = document.getElementById("portal-logo-file");
+      const fileNameEl = document.getElementById("portal-logo-filename");
+      const themeSelect = document.getElementById("portal-theme-select");
+      const status = document.getElementById("settings-status");
+      const btnResetTitle = document.getElementById("btn-reset-title");
+
+      logoFileInput.addEventListener("change", () => {
+        const file = logoFileInput.files && logoFileInput.files[0];
+        if (!file) {
+          fileNameEl.textContent = "(aucun fichier)";
+          portalLogoDataUrl = null;
+          return;
+        }
+        if (file.size > MAX_IMAGE_SIZE) {
+          status.innerHTML =
+            '<span class="err">Logo trop lourd (max ~256 Ko). Choisis une image plus légère.</span>';
+          logoFileInput.value = "";
+          fileNameEl.textContent = "(aucun fichier)";
+          portalLogoDataUrl = null;
+          return;
+        }
+        fileNameEl.textContent = file.name;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          portalLogoDataUrl = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const title = titleInput.value.trim();
+        const subtitle = subtitleInput.value.trim();
+        const logoText = logoTextInput.value.trim() || "HL";
+        const theme = themeSelect.value || "dark";
+
+        if (!title || !subtitle) {
+          status.innerHTML =
+            '<span class="err">Merci de renseigner le titre et le sous-titre.</span>';
+          return;
+        }
+
+        titleSettings.title = title;
+        titleSettings.subtitle = subtitle;
+        titleSettings.logoText = logoText;
+        titleSettings.theme = theme;
+
+        if (portalLogoDataUrl !== null) {
+          titleSettings.logoImage = portalLogoDataUrl;
+        }
+
+        const cams = [];
+        titleSettings.cameras.forEach((_, index) => {
+          const nameEl = document.getElementById(`camera-name-${index}`);
+          const snapEl = document.getElementById(`camera-snapshot-${index}`);
+          const clickEl = document.getElementById(`camera-click-${index}`);
+          cams.push({
+            name: nameEl ? nameEl.value.trim() : "",
+            snapshotUrl: snapEl ? snapEl.value.trim() : "",
+            clickUrl: clickEl ? clickEl.value.trim() : "",
+          });
+        });
+        titleSettings.cameras = cams;
+
+        saveTitleSettings();
+        applyTheme();
+        applyTitleSettings();
+        renderCameras();
+
+        status.innerHTML =
+          '<span class="ok">Bandeau, thème et caméras mis à jour avec succès.</span>';
+      });
+
+      btnResetTitle.addEventListener("click", () => {
+        if (!confirm("Revenir aux valeurs par défaut du titre, du sous-titre, du logo, des caméras et du thème ?")) {
+          return;
+        }
+        titleSettings = {
+          title: "Homelab Control Hub",
+          subtitle: "Portail privé – services locaux & containers",
+          logoText: "HL",
+          logoImage: null,
+          theme: "dark",
+          cameras: [
+            { name: "Entrée", snapshotUrl: "", clickUrl: "" },
+            { name: "Jardin", snapshotUrl: "", clickUrl: "" },
+            { name: "Garage", snapshotUrl: "", clickUrl: "" },
+            { name: "Salon", snapshotUrl: "", clickUrl: "" },
+          ],
+        };
+        saveTitleSettings();
+        applyTheme();
+        applyTitleSettings();
+        renderCameras();
+
+        titleInput.value = titleSettings.title;
+        subtitleInput.value = titleSettings.subtitle;
+        logoTextInput.value = titleSettings.logoText;
+        logoFileInput.value = "";
+        fileNameEl.textContent = "(aucun fichier)";
+        themeSelect.value = titleSettings.theme;
+
+        titleSettings.cameras.forEach((cam, index) => {
+          const nameEl = document.getElementById(`camera-name-${index}`);
+          const snapEl = document.getElementById(`camera-snapshot-${index}`);
+          const clickEl = document.getElementById(`camera-click-${index}`);
+          if (!nameEl || !snapEl || !clickEl) return;
+          nameEl.value = cam.name || "";
+          snapEl.value = cam.snapshotUrl || "";
+          clickEl.value = cam.clickUrl || "";
+        });
+
+        status.innerHTML =
+          '<span class="ok">Titre, sous-titre, logo, caméras et thème réinitialisés.</span>';
+      });
+    }
+
+    function setupSearch() {
+      const search = document.getElementById("search");
+      search.addEventListener("input", () => {
+        renderTiles(search.value);
+      });
+    }
+
+    function setStatus(linkId, status) {
+      const dot = statusDots[linkId];
+      if (!dot) return;
+      dot.classList.remove("tile-status-up", "tile-status-down", "tile-status-unknown");
+      if (status === "up") {
+        dot.classList.add("tile-status-up");
+        dot.title = "État : UP (HTTP OK)";
+      } else if (status === "down") {
+        dot.classList.add("tile-status-down");
+        dot.title = "État : DOWN (erreur réseau)";
+      } else {
+        dot.classList.add("tile-status-unknown");
+        dot.title = "État : inconnu";
+      }
+    }
+
+    function pingLink(link) {
+      const url = link.healthUrl || link.url;
+      if (!url) {
+        setStatus(link.id, "unknown");
+        return;
+      }
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 4000);
+
+      fetch(url, { mode: "no-cors", signal: controller.signal })
+        .then(() => {
+          setStatus(link.id, "up");
+        })
+        .catch(() => {
+          setStatus(link.id, "down");
+        })
+        .finally(() => {
+          clearTimeout(timeout);
+        });
+    }
+
+    function scheduleHealthChecks() {
+      links.forEach((link) => pingLink(link));
+      setInterval(() => {
+        links.forEach((link) => pingLink(link));
+      }, HEALTH_CHECK_INTERVAL);
+    }
+
+    /* Modal caméra plein écran */
+    function openCameraModal(cam) {
+      const modal = document.getElementById("camera-modal");
+      const nameEl = document.getElementById("camera-modal-name");
+      const imgEl = document.getElementById("camera-modal-img");
+      const placeholderEl = document.getElementById("camera-modal-placeholder");
+      const statusEl = document.getElementById("camera-modal-status");
+      const openTabBtn = document.getElementById("camera-modal-open-tab");
+
+      // stop éventuel ancien intervalle
+      if (cameraModalIntervalId !== null) {
+        clearInterval(cameraModalIntervalId);
+        cameraModalIntervalId = null;
+      }
+
+      currentCameraModal = {
+        name: cam.name || "",
+        snapshotUrl: cam.snapshotUrl || "",
+        clickUrl: cam.clickUrl || "",
+      };
+
+      nameEl.textContent = currentCameraModal.name || "Caméra";
+      statusEl.innerHTML = "";
+
+      if (currentCameraModal.snapshotUrl) {
+        const base = currentCameraModal.snapshotUrl;
+        const sep = base.includes("?") ? "&" : "?";
+
+        const loadFrame = () => {
+          imgEl.style.display = "block";
+          placeholderEl.style.display = "none";
+          imgEl.src = `${base}${sep}t=${Date.now()}`;
+        };
+
+        imgEl.onerror = () => {
+          imgEl.style.display = "none";
+          placeholderEl.style.display = "flex";
+          statusEl.innerHTML =
+            '<span class="err">Impossible de charger le flux / snapshot. Vérifie l’URL HTTP ou les droits.</span>';
+        };
+
+        loadFrame();
+        cameraModalIntervalId = setInterval(loadFrame, CAMERA_MODAL_REFRESH_INTERVAL);
+      } else {
+        imgEl.style.display = "none";
+        placeholderEl.style.display = "flex";
+      }
+
+      if (currentCameraModal.clickUrl) {
+        openTabBtn.disabled = false;
+        openTabBtn.classList.remove("btn-secondary");
+        openTabBtn.classList.add("btn-primary");
+      } else {
+        openTabBtn.disabled = true;
+        openTabBtn.classList.remove("btn-primary");
+        openTabBtn.classList.add("btn-secondary");
+      }
+
+      modal.classList.remove("modal-hidden");
+    }
+
+    function closeCameraModal() {
+      const modal = document.getElementById("camera-modal");
+      modal.classList.add("modal-hidden");
+      if (cameraModalIntervalId !== null) {
+        clearInterval(cameraModalIntervalId);
+        cameraModalIntervalId = null;
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadTitleSettings();
+      applyTheme();
+      applyTitleSettings();
+
+      buildCameraSettingsFields();
+      renderCameras();
+
+      loadTabState();
+      loadLinks();
+
+      populateTabSelect();
+      renderTabs();
+      renderTiles();
+
+      setupSearch();
+      setupShortcutForm();
+      setupSettingsForm();
+
+      updateClock();
+      setInterval(updateClock, 1000);
+      setInterval(() => refreshCameraSnapshots(false), 15000);
+
+      scheduleHealthChecks();
+
+      const btnOpenModal = document.getElementById("btn-open-modal");
+      const btnCloseModal = document.getElementById("modal-close");
+      const modal = document.getElementById("modal");
+
+      btnOpenModal.addEventListener("click", () => openShortcutModal("new", null));
+      btnCloseModal.addEventListener("click", closeShortcutModal);
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) {
+          closeShortcutModal();
+        }
+      });
+
+      const btnOpenSettings = document.getElementById("btn-open-settings");
+      const btnCloseSettings = document.getElementById("settings-close");
+      const settingsModalEl = document.getElementById("settings-modal");
+
+      btnOpenSettings.addEventListener("click", openSettingsModal);
+      btnCloseSettings.addEventListener("click", closeSettingsModal);
+      settingsModalEl.addEventListener("click", (e) => {
+        if (e.target === settingsModalEl) {
+          closeSettingsModal();
+        }
+      });
+
+      const camModalEl = document.getElementById("camera-modal");
+      const camCloseTop = document.getElementById("camera-modal-close");
+      const camCloseBottom = document.getElementById("camera-modal-close-bottom");
+      const camOpenTabBtn = document.getElementById("camera-modal-open-tab");
+
+      camCloseTop.addEventListener("click", closeCameraModal);
+      camCloseBottom.addEventListener("click", closeCameraModal);
+      camModalEl.addEventListener("click", (e) => {
+        if (e.target === camModalEl) {
+          closeCameraModal();
+        }
+      });
+
+      camOpenTabBtn.addEventListener("click", () => {
+        if (!currentCameraModal.clickUrl) return;
+        window.open(currentCameraModal.clickUrl, "_blank", "noopener,noreferrer");
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          closeShortcutModal();
+          closeSettingsModal();
+          closeCameraModal();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
