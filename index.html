@@ -49,7 +49,7 @@
       --border-subtle: rgba(148, 163, 184, 0.3);
     }
 
-    * { box-sizing: border-box; }
+    *, *::before, *::after { box-sizing: border-box; }
 
     html, body {
       margin: 0;
@@ -64,18 +64,19 @@
       display: flex;
       justify-content: center;
       align-items: stretch;
-      padding: 24px;
+      padding: clamp(14px, 2.5vw, 28px);
       min-height: 100vh;
+      overflow-x: hidden;
     }
 
     .app-shell {
       width: 100%;
-      max-width: 1200px;
+      max-width: min(1200px, 100%);
       background:
         linear-gradient(135deg, rgba(56, 189, 248, 0.05), rgba(168, 85, 247, 0.03)),
         radial-gradient(circle at top left, rgba(15, 23, 42, 0.9), #020617);
       border-radius: 24px;
-      padding: 22px 24px 26px;
+      padding: clamp(16px, 2.4vw, 24px) clamp(14px, 3vw, 26px) clamp(18px, 3vw, 28px);
       box-shadow: var(--shadow-soft);
       border: 1px solid rgba(148, 163, 184, 0.3);
       position: relative;
@@ -97,7 +98,7 @@
       z-index: 1;
       display: flex;
       flex-direction: column;
-      max-height: calc(100vh - 48px);
+      max-height: calc(100vh - 2 * clamp(14px, 2.5vw, 28px));
     }
 
     header {
@@ -159,7 +160,7 @@
 
     .title-block h1 {
       margin: 0;
-      font-size: 1.6rem;
+      font-size: clamp(1.25rem, 2.5vw, 1.7rem);
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: #e5e7eb;
@@ -170,7 +171,7 @@
 
     .title-block p {
       margin: 3px 0 0;
-      font-size: 0.85rem;
+      font-size: clamp(0.78rem, 1.4vw, 0.92rem);
       color: var(--muted);
       white-space: nowrap;
       overflow: hidden;
@@ -194,7 +195,7 @@
     .clock {
       font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
         Consolas, "Liberation Mono", "Courier New", monospace;
-      font-size: 0.82rem;
+      font-size: clamp(0.78rem, 1.2vw, 0.9rem);
       color: var(--muted);
       padding: 4px 10px;
       border-radius: 999px;
@@ -208,18 +209,19 @@
       gap: 10px;
       align-items: center;
       flex-shrink: 0;
+      flex-wrap: wrap;
     }
 
     .search-wrapper { position: relative; flex: 1; }
 
     .search-wrapper input {
       width: 100%;
-      padding: 9px 11px 9px 32px;
+      padding: clamp(8px, 1.8vw, 10px) clamp(10px, 2vw, 12px) clamp(8px, 1.8vw, 10px) 32px;
       border-radius: 999px;
       border: 1px solid var(--border-subtle);
       background: rgba(15, 23, 42, 0.95);
       color: var(--text);
-      font-size: 0.85rem;
+      font-size: clamp(0.82rem, 1.4vw, 0.9rem);
       outline: none;
       transition: border var(--transition-fast), box-shadow var(--transition-fast),
         background var(--transition-fast), transform var(--transition-fast);
@@ -261,7 +263,7 @@
     }
 
     .quick-info {
-      font-size: 0.78rem;
+      font-size: clamp(0.74rem, 1.2vw, 0.84rem);
       color: var(--muted);
       padding: 6px 10px;
       border-radius: 999px;
@@ -283,8 +285,8 @@
     .camera-strip {
       margin-bottom: 10px;
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 8px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: clamp(8px, 2vw, 12px);
       flex-shrink: 0;
     }
 
@@ -335,7 +337,7 @@
       position: absolute;
       left: 6px;
       bottom: 4px;
-      font-size: 0.7rem;
+      font-size: clamp(0.68rem, 1.1vw, 0.74rem);
       padding: 2px 7px;
       border-radius: 999px;
       background: rgba(15, 23, 42, 0.9);
@@ -395,12 +397,12 @@
     }
 
     .tab-btn {
-      padding: 5px 11px;
+      padding: clamp(7px, 1.4vw, 10px) clamp(12px, 2vw, 16px);
       border-radius: 999px;
       border: 1px solid var(--border-subtle);
       background: rgba(15, 23, 42, 0.9);
       color: var(--muted);
-      font-size: 0.78rem;
+      font-size: clamp(0.75rem, 1.2vw, 0.85rem);
       cursor: pointer;
       display: inline-flex;
       align-items: center;
@@ -437,7 +439,7 @@
       background: var(--glass);
       border: 1px solid var(--border-subtle);
       box-shadow: 0 14px 30px rgba(15, 23, 42, 0.65);
-      padding: 16px 16px 14px;
+      padding: clamp(14px, 2vw, 18px);
       flex: 1;
       min-height: 0;
       display: flex;
@@ -456,7 +458,7 @@
 
     .panel-header h2 {
       margin: 0;
-      font-size: 0.95rem;
+      font-size: clamp(0.9rem, 1.4vw, 1.05rem);
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: rgba(249, 250, 251, 0.9);
@@ -465,14 +467,14 @@
     .panel-header h2 span { color: var(--accent); }
 
     .panel-header small {
-      font-size: 0.7rem;
+      font-size: clamp(0.68rem, 1.1vw, 0.78rem);
       color: var(--muted);
     }
 
     .tiles-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: clamp(10px, 2vw, 14px);
       flex: 1;
       min-height: 0;
       overflow-y: auto;
@@ -490,7 +492,7 @@
       position: relative;
       border-radius: 16px;
       border: 1px solid rgba(148, 163, 184, 0.5);
-      padding: 9px 10px 9px;
+      padding: clamp(10px, 2vw, 12px);
       background: radial-gradient(circle at top left, #0b1120, #020617);
       display: flex;
       flex-direction: column;
@@ -538,22 +540,22 @@
     }
 
     .tile-title {
-      font-size: 0.9rem;
+      font-size: clamp(0.86rem, 1.4vw, 1rem);
       font-weight: 600;
       color: #f9fafb;
     }
 
     .tile-sub {
-      font-size: 0.74rem;
+      font-size: clamp(0.72rem, 1.2vw, 0.82rem);
       color: var(--muted);
     }
 
     .chip {
       align-self: flex-start;
       margin-top: 2px;
-      padding: 3px 8px;
+      padding: clamp(3px, 0.8vw, 5px) clamp(8px, 1.6vw, 10px);
       border-radius: 999px;
-      font-size: 0.68rem;
+      font-size: clamp(0.64rem, 1vw, 0.74rem);
       text-transform: uppercase;
       letter-spacing: 0.08em;
       border: 1px solid var(--accent-soft);
@@ -637,7 +639,7 @@
 
     footer {
       margin-top: 10px;
-      font-size: 0.7rem;
+      font-size: clamp(0.68rem, 1vw, 0.76rem);
       color: rgba(148, 163, 184, 0.75);
       display: flex;
       justify-content: space-between;
@@ -652,7 +654,7 @@
     .fab {
       position: absolute;
       right: 20px;
-      bottom: 20px;
+      bottom: calc(20px + env(safe-area-inset-bottom));
       width: 46px;
       height: 46px;
       border-radius: 999px;
@@ -678,7 +680,7 @@
     .settings-btn {
       position: absolute;
       right: 78px;
-      bottom: 22px;
+      bottom: calc(22px + env(safe-area-inset-bottom));
       width: 38px;
       height: 38px;
       border-radius: 999px;
@@ -838,7 +840,7 @@
 
     .form-group label {
       display: block;
-      font-size: 0.78rem;
+      font-size: clamp(0.74rem, 1.1vw, 0.82rem);
       margin-bottom: 4px;
       color: rgba(209, 213, 219, 0.9);
     }
@@ -848,12 +850,12 @@
     .form-group input[type="password"],
     .form-group select {
       width: 100%;
-      padding: 7px 9px;
+      padding: clamp(8px, 1.6vw, 10px) clamp(10px, 2vw, 12px);
       border-radius: 999px;
       border: 1px solid var(--border-subtle);
       background: rgba(15, 23, 42, 0.95);
       color: var(--text);
-      font-size: 0.8rem;
+      font-size: clamp(0.78rem, 1.2vw, 0.88rem);
       outline: none;
       transition: border var(--transition-fast), box-shadow var(--transition-fast),
         background var(--transition-fast), transform var(--transition-fast);
@@ -934,7 +936,7 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      font-size: 0.76rem;
+      font-size: clamp(0.72rem, 1vw, 0.8rem);
       color: var(--muted);
     }
 
@@ -958,7 +960,7 @@
     .file-label span { font-size: 0.85rem; }
 
     .file-hint {
-      font-size: 0.7rem;
+      font-size: clamp(0.68rem, 1vw, 0.78rem);
       color: var(--muted);
       margin-top: 4px;
     }
@@ -975,8 +977,8 @@
     .btn {
       border-radius: 999px;
       border: none;
-      padding: 7px 14px;
-      font-size: 0.8rem;
+      padding: clamp(8px, 1.6vw, 10px) clamp(14px, 2.4vw, 18px);
+      font-size: clamp(0.78rem, 1.2vw, 0.88rem);
       cursor: pointer;
       display: inline-flex;
       align-items: center;
@@ -1026,14 +1028,14 @@
       color: var(--muted);
       border: none;
       padding: 0;
-      font-size: 0.74rem;
+      font-size: clamp(0.7rem, 1vw, 0.78rem);
       cursor: pointer;
     }
 
     .btn-ghost span { text-decoration: underline dotted; }
 
     .status {
-      font-size: 0.75rem;
+      font-size: clamp(0.72rem, 1vw, 0.8rem);
       color: var(--muted);
       margin-top: 6px;
     }
@@ -1043,7 +1045,7 @@
 
     .modal-footer-actions {
       margin-top: 8px;
-      font-size: 0.7rem;
+      font-size: clamp(0.68rem, 1vw, 0.76rem);
       color: var(--muted);
       display: flex;
       justify-content: space-between;
@@ -1053,14 +1055,88 @@
 
     .modal-footer-actions code { font-size: 0.7rem; }
 
-    @media (max-width: 900px) {
-      body { padding: 14px; }
+    /* Responsive helpers */
+    .tabs::-webkit-scrollbar { height: 0; }
+    .tabs { scrollbar-width: none; }
 
-      .app-shell {
-        padding: 16px 14px 18px;
-        border-radius: 18px;
+    .tile-title,
+    .tile-sub,
+    .panel-header h2,
+    footer span,
+    .quick-info {
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    @media (max-width: 480px) {
+      header { flex-wrap: wrap; }
+
+      .title-block h1,
+      .title-block p {
+        white-space: normal;
       }
 
+      .top-actions {
+        width: 100%;
+        align-items: flex-start;
+      }
+
+      .search-bar {
+        gap: 8px;
+      }
+
+      .search-wrapper,
+      .quick-info {
+        width: 100%;
+      }
+
+      .quick-info {
+        justify-content: flex-start;
+      }
+
+      .camera-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 4px;
+      }
+
+      .tab-btn {
+        min-height: 44px;
+      }
+
+      .btn,
+      .modal-close,
+      .settings-btn,
+      .fab {
+        min-height: 44px;
+      }
+
+      .fab {
+        width: 44px;
+        height: 44px;
+        right: 16px;
+        bottom: calc(16px + env(safe-area-inset-bottom));
+      }
+
+      .settings-btn {
+        width: 44px;
+        height: 44px;
+        right: 68px;
+        bottom: calc(16px + env(safe-area-inset-bottom));
+      }
+
+      .modal-dialog {
+        max-width: 95vw;
+        max-height: 90vh;
+        margin: 10px;
+      }
+    }
+
+    @media (min-width: 481px) and (max-width: 768px) {
       header { flex-wrap: wrap; }
 
       .top-actions {
@@ -1068,17 +1144,36 @@
         align-items: flex-start;
       }
 
-      .title-block h1 { font-size: 1.4rem; }
-      .title-block p { font-size: 0.8rem; }
-
       .camera-strip {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .tiles-grid {
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
       }
 
       .modal-dialog {
         max-width: 95vw;
         max-height: 90vh;
-        margin: 10px;
+        margin: 12px;
+      }
+    }
+
+    @media (min-width: 769px) and (max-width: 1100px) {
+      .tiles-grid {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      }
+    }
+
+    @media (min-width: 1101px) {
+      .tiles-grid {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      }
+    }
+
+    @media (min-width: 1600px) {
+      .app-shell {
+        max-width: 1400px;
       }
     }
   </style>
