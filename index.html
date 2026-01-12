@@ -5,6 +5,22 @@
   <title>Homelab Portal</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
+    /* Global scroll + layout fix */
+    html, body {
+      height: auto;
+      min-height: 100%;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+
+    body {
+      margin: 0;
+      padding: clamp(14px, 2.5vw, 28px);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text","Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #020617, #020617 40%, #000000);
+      color: var(--text);
+    }
+
     :root {
       --bg: #050712;
       --accent: #38bdf8;
@@ -51,27 +67,10 @@
 
     *, *::before, *::after { box-sizing: border-box; }
 
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text","Segoe UI", sans-serif;
-      background: radial-gradient(circle at top, #020617, #020617 40%, #000000);
-      color: var(--text);
-    }
-
-    body {
-      display: flex;
-      justify-content: center;
-      align-items: stretch;
-      padding: clamp(14px, 2.5vw, 28px);
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-
     .app-shell {
       width: 100%;
-      max-width: min(1200px, 100%);
+      max-width: 1800px;
+      margin-inline: auto;
       background:
         linear-gradient(135deg, rgba(56, 189, 248, 0.05), rgba(168, 85, 247, 0.03)),
         radial-gradient(circle at top left, rgba(15, 23, 42, 0.9), #020617);
@@ -80,7 +79,7 @@
       box-shadow: var(--shadow-soft);
       border: 1px solid rgba(148, 163, 184, 0.3);
       position: relative;
-      overflow: hidden;
+      overflow: visible;
     }
 
     .matrix-bg {
@@ -98,7 +97,6 @@
       z-index: 1;
       display: flex;
       flex-direction: column;
-      max-height: calc(100vh - 2 * clamp(14px, 2.5vw, 28px));
     }
 
     header {
@@ -477,7 +475,6 @@
       gap: clamp(10px, 2vw, 14px);
       flex: 1;
       min-height: 0;
-      overflow-y: auto;
       padding-right: 4px;
     }
 
@@ -1171,11 +1168,6 @@
       }
     }
 
-    @media (min-width: 1600px) {
-      .app-shell {
-        max-width: 1400px;
-      }
-    }
   </style>
 </head>
 <body>
