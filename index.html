@@ -1537,15 +1537,16 @@
       { id: "custom", label: "Custom", icon: "⭐" },
     ];
 
+    // URLs de santé : préférer des ressources statiques (images, favicon) accessibles sans auth
     const DEFAULT_LINKS = [
-      { name: "Proxmox", url: "https://proxmox.local:8006", healthUrl: "https://proxmox.local:8006/api2/json/version", description: "Hyperviseur & VM / LXC", chip: "Core", icon: "🧬", tab: "core" },
-      { name: "Zoraxy", url: "https://zoraxy.local", healthUrl: "https://zoraxy.local/health", description: "Reverse proxy / SSO", chip: "Edge", icon: "🛡️", tab: "network" },
-      { name: "Docker / Portainer", url: "https://docker.local:9443", healthUrl: "https://docker.local:9443/api/system/status", description: "Stacks & containers", chip: "Docker", icon: "🐋", tab: "core" },
-      { name: "Transmission", url: "https://transmission.local", healthUrl: "https://transmission.local/transmission/rpc", description: "Downloads & torrents", chip: "Media", icon: "📡", tab: "media" },
-      { name: "Emby", url: "https://emby.local:8096", healthUrl: "https://emby.local:8096/emby/System/Ping", description: "Serveur multimédia", chip: "Media", icon: "🎬", tab: "media" },
-      { name: "Home Assistant", url: "https://ha.local:8123", healthUrl: "https://ha.local:8123/api/", description: "Domotique / IoT", chip: "SmartHome", icon: "🏠", tab: "domotic" },
-      { name: "Frigate", url: "https://frigate.local", healthUrl: "https://frigate.local/api/version", description: "NVR & détection IA", chip: "Caméra", icon: "📹", tab: "camera" },
-      { name: "OpenWebUI / IA", url: "https://ai.local", healthUrl: "https://ai.local/health", description: "Interface IA locale", chip: "AI", icon: "🧠", tab: "ai" },
+      { name: "Proxmox", url: "https://proxmox.local:8006", healthUrl: "https://proxmox.local:8006/pve-docs/images/logo-128.png", description: "Hyperviseur & VM / LXC", chip: "Core", icon: "🧬", tab: "core" },
+      { name: "Zoraxy", url: "https://zoraxy.local", healthUrl: "https://zoraxy.local/favicon.ico", description: "Reverse proxy / SSO", chip: "Edge", icon: "🛡️", tab: "network" },
+      { name: "Docker / Portainer", url: "https://docker.local:9443", healthUrl: "https://docker.local:9443/favicon.ico", description: "Stacks & containers", chip: "Docker", icon: "🐋", tab: "core" },
+      { name: "Transmission", url: "https://transmission.local", healthUrl: "https://transmission.local/favicon.ico", description: "Downloads & torrents", chip: "Media", icon: "📡", tab: "media" },
+      { name: "Emby", url: "https://emby.local:8096", healthUrl: "https://emby.local:8096/web/favicon.ico", description: "Serveur multimédia", chip: "Media", icon: "🎬", tab: "media" },
+      { name: "Home Assistant", url: "https://ha.local:8123", healthUrl: "https://ha.local:8123/static/icons/favicon.ico", description: "Domotique / IoT", chip: "SmartHome", icon: "🏠", tab: "domotic" },
+      { name: "Frigate", url: "https://frigate.local", healthUrl: "https://frigate.local/favicon.ico", description: "NVR & détection IA", chip: "Caméra", icon: "📹", tab: "camera" },
+      { name: "OpenWebUI / IA", url: "https://ai.local", healthUrl: "https://ai.local/favicon.png", description: "Interface IA locale", chip: "AI", icon: "🧠", tab: "ai" },
     ];
 
     const DEFAULT_AUTH = {
@@ -2817,6 +2818,28 @@
       img.src = `${url}${sep}t=${Date.now()}`;
     }
 
+    function pingLinkNoCors(url, linkId) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), CONFIG.HEALTH_TIMEOUT);
+
+      fetch(url, {
+        mode: "no-cors",
+        cache: "no-store",
+        redirect: "follow",
+        signal: controller.signal,
+      })
+        .then(() => {
+          clearTimeout(timeout);
+          // En no-cors, si on arrive ici sans erreur, le serveur a répondu
+          setStatus(linkId, "up");
+        })
+        .catch(() => {
+          clearTimeout(timeout);
+          // Dernier recours : essai via image (favicon ou URL directe)
+          pingLinkWithImage(url, linkId);
+        });
+    }
+
     function pingLink(link) {
       const url = getHealthUrl(link);
       if (!url) {
@@ -2835,12 +2858,19 @@
       })
         .then((response) => {
           clearTimeout(timeout);
-          setStatus(link.id, response.ok || response.type === "opaque" ? "up" : "down");
+          if (response.ok) {
+            setStatus(link.id, "up");
+          } else if (response.type === "opaque") {
+            // Réponse opaque en CORS = serveur a répondu
+            setStatus(link.id, "up");
+          } else {
+            setStatus(link.id, "down");
+          }
         })
         .catch(() => {
           clearTimeout(timeout);
-          // Fallback : essai via image
-          pingLinkWithImage(url, link.id);
+          // Fallback 1 : essai en mode no-cors
+          pingLinkNoCors(url, link.id);
         });
     }
 
