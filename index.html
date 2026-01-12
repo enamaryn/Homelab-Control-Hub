@@ -4,8 +4,68 @@
   <meta charset="UTF-8" />
   <title>Homelab Portal</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Portail homelab - Accès centralisé aux services self-hosted" />
   <style>
-    /* Global scroll + layout fix */
+    /* ==========================================================================
+       1. VARIABLES & THEMES
+       ========================================================================== */
+    :root {
+      /* Couleurs de base */
+      --bg: #050712;
+      --accent: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.4);
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --danger: #f97373;
+      --success: #22c55e;
+
+      /* Layout */
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 18px;
+      --radius-xl: 24px;
+      --radius-full: 999px;
+
+      /* Effets */
+      --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.45);
+      --shadow-glow: 0 0 26px var(--accent-soft);
+      --transition-fast: 0.18s ease-out;
+      --glass: rgba(15, 23, 42, 0.75);
+      --border-subtle: rgba(148, 163, 184, 0.15);
+
+      /* Z-index */
+      --z-header: 3;
+      --z-fab: 5;
+      --z-modal: 10;
+      --z-auth: 999;
+    }
+
+    :root[data-theme="dark"] {
+      --accent: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.4);
+      --glass: rgba(15, 23, 42, 0.78);
+      --border-subtle: rgba(148, 163, 184, 0.25);
+    }
+
+    :root[data-theme="neon"] {
+      --accent: #a855f7;
+      --accent-soft: rgba(168, 85, 247, 0.5);
+      --glass: radial-gradient(circle at top left, rgba(15,23,42,0.95), #020617);
+      --border-subtle: rgba(168, 85, 247, 0.45);
+    }
+
+    :root[data-theme="minimal"] {
+      --accent: #22c55e;
+      --accent-soft: rgba(34, 197, 94, 0.4);
+      --glass: rgba(15, 23, 42, 0.9);
+      --border-subtle: rgba(148, 163, 184, 0.3);
+    }
+
+    /* ==========================================================================
+       2. RESET & BASE
+       ========================================================================== */
+    *, *::before, *::after { box-sizing: border-box; }
+
     html, body {
       height: auto;
       min-height: 100%;
@@ -16,57 +76,40 @@
     body {
       margin: 0;
       padding: clamp(14px, 2.5vw, 28px);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text","Segoe UI", sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
       background: radial-gradient(circle at top, #020617, #020617 40%, #000000);
       color: var(--text);
+      line-height: 1.5;
     }
 
-    :root {
-      --bg: #050712;
-      --accent: #38bdf8;
-      --accent-soft: rgba(56, 189, 248, 0.4);
-      --text: #e5e7eb;
-      --muted: #9ca3af;
-      --danger: #f97373;
-      --radius-xl: 18px;
-      --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.45);
-      --transition-fast: 0.18s ease-out;
-      --glass: rgba(15, 23, 42, 0.75);
-      --border-subtle: rgba(148, 163, 184, 0.15);
+    /* Focus visible global */
+    :focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+      box-shadow: 0 0 0 3px var(--accent-soft);
     }
 
-    :root[data-theme="dark"] {
-      --bg: #050712;
-      --accent: #38bdf8;
-      --accent-soft: rgba(56, 189, 248, 0.4);
-      --text: #e5e7eb;
-      --muted: #9ca3af;
-      --glass: rgba(15, 23, 42, 0.78);
-      --border-subtle: rgba(148, 163, 184, 0.25);
+    /* Skip link pour accessibilité */
+    .skip-link {
+      position: absolute;
+      top: -100%;
+      left: 0;
+      padding: 8px 16px;
+      background: var(--accent);
+      color: #020617;
+      font-weight: 600;
+      z-index: 9999;
+      border-radius: var(--radius-sm);
     }
 
-    :root[data-theme="neon"] {
-      --bg: #020617;
-      --accent: #a855f7;
-      --accent-soft: rgba(168, 85, 247, 0.5);
-      --text: #e5e7eb;
-      --muted: #9ca3af;
-      --glass: radial-gradient(circle at top left, rgba(15,23,42,0.95), #020617);
-      --border-subtle: rgba(168, 85, 247, 0.45);
+    .skip-link:focus {
+      top: 10px;
+      left: 10px;
     }
 
-    :root[data-theme="minimal"] {
-      --bg: #020617;
-      --accent: #22c55e;
-      --accent-soft: rgba(34, 197, 94, 0.4);
-      --text: #e5e7eb;
-      --muted: #94a3b8;
-      --glass: rgba(15, 23, 42, 0.9);
-      --border-subtle: rgba(148, 163, 184, 0.3);
-    }
-
-    *, *::before, *::after { box-sizing: border-box; }
-
+    /* ==========================================================================
+       3. LAYOUT PRINCIPAL
+       ========================================================================== */
     .app-shell {
       width: 100%;
       max-width: 1800px;
@@ -74,7 +117,7 @@
       background:
         linear-gradient(135deg, rgba(56, 189, 248, 0.05), rgba(168, 85, 247, 0.03)),
         radial-gradient(circle at top left, rgba(15, 23, 42, 0.9), #020617);
-      border-radius: 24px;
+      border-radius: var(--radius-xl);
       padding: clamp(16px, 2.4vw, 24px) clamp(14px, 3vw, 26px) clamp(18px, 3vw, 28px);
       box-shadow: var(--shadow-soft);
       border: 1px solid rgba(148, 163, 184, 0.3);
@@ -90,6 +133,7 @@
       background-image: radial-gradient(circle at 1px 1px, var(--accent) 1px, transparent 0);
       background-size: 18px 18px;
       mix-blend-mode: screen;
+      border-radius: inherit;
     }
 
     .app-content {
@@ -99,6 +143,9 @@
       flex-direction: column;
     }
 
+    /* ==========================================================================
+       4. HEADER
+       ========================================================================== */
     header {
       display: flex;
       align-items: center;
@@ -106,7 +153,7 @@
       margin-bottom: 14px;
       position: sticky;
       top: 0;
-      z-index: 3;
+      z-index: var(--z-header);
       padding-bottom: 10px;
       background: linear-gradient(
         to bottom,
@@ -121,7 +168,7 @@
     .logo-circle {
       width: 46px;
       height: 46px;
-      border-radius: 999px;
+      border-radius: var(--radius-full);
       background: radial-gradient(circle at 30% 20%, var(--accent), #0f172a);
       display: flex;
       align-items: center;
@@ -154,7 +201,10 @@
       display: block;
     }
 
-    .title-block { flex: 1; min-width: 0; }
+    .title-block {
+      flex: 1;
+      min-width: 0;
+    }
 
     .title-block h1 {
       margin: 0;
@@ -191,31 +241,36 @@
     }
 
     .clock {
-      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
-        Consolas, "Liberation Mono", "Courier New", monospace;
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-size: clamp(0.78rem, 1.2vw, 0.9rem);
       color: var(--muted);
       padding: 4px 10px;
-      border-radius: 999px;
+      border-radius: var(--radius-full);
       background: rgba(15, 23, 42, 0.85);
       border: 1px solid rgba(148, 163, 184, 0.25);
     }
 
+    /* ==========================================================================
+       5. BARRE DE RECHERCHE
+       ========================================================================== */
     .search-bar {
       margin: 6px 0 10px;
       display: flex;
       gap: 10px;
       align-items: center;
-      flex-shrink: 0;
       flex-wrap: wrap;
     }
 
-    .search-wrapper { position: relative; flex: 1; }
+    .search-wrapper {
+      position: relative;
+      flex: 1;
+      min-width: 200px;
+    }
 
     .search-wrapper input {
       width: 100%;
       padding: clamp(8px, 1.8vw, 10px) clamp(10px, 2vw, 12px) clamp(8px, 1.8vw, 10px) 32px;
-      border-radius: 999px;
+      border-radius: var(--radius-full);
       border: 1px solid var(--border-subtle);
       background: rgba(15, 23, 42, 0.95);
       color: var(--text);
@@ -236,20 +291,6 @@
       transform: translateY(-0.5px);
     }
 
-    .tile:focus-visible,
-    .tab-btn:focus-visible,
-    .fab:focus-visible,
-    .settings-btn:focus-visible,
-    .camera-card:focus-visible,
-    .modal-close:focus-visible,
-    .btn:focus-visible,
-    input:focus-visible,
-    select:focus-visible {
-      outline: 2px solid var(--accent);
-      outline-offset: 3px;
-      box-shadow: 0 0 0 3px var(--accent-soft);
-    }
-
     .search-icon {
       position: absolute;
       left: 10px;
@@ -264,7 +305,7 @@
       font-size: clamp(0.74rem, 1.2vw, 0.84rem);
       color: var(--muted);
       padding: 6px 10px;
-      border-radius: 999px;
+      border-radius: var(--radius-full);
       border: 1px dashed rgba(148, 163, 184, 0.4);
       background: rgba(15, 23, 42, 0.85);
       display: inline-flex;
@@ -279,23 +320,30 @@
       font-size: 0.88rem;
     }
 
-    /* Bandeau caméras */
+    /* ==========================================================================
+       6. BANDEAU CAMERAS
+       ========================================================================== */
     .camera-strip {
       margin-bottom: 10px;
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       gap: clamp(8px, 2vw, 12px);
-      flex-shrink: 0;
     }
 
     .camera-card {
       position: relative;
-      border-radius: 14px;
+      border-radius: var(--radius-md);
       overflow: hidden;
       border: 1px solid rgba(148, 163, 184, 0.4);
       background: rgba(15, 23, 42, 0.9);
       cursor: pointer;
       min-height: 70px;
+      transition: border-color var(--transition-fast), transform var(--transition-fast);
+    }
+
+    .camera-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
     }
 
     .camera-card-inner {
@@ -323,11 +371,7 @@
     .camera-overlay {
       position: absolute;
       inset: 0;
-      background: linear-gradient(
-        to top,
-        rgba(15, 23, 42, 0.85),
-        transparent 60%
-      );
+      background: linear-gradient(to top, rgba(15, 23, 42, 0.85), transparent 60%);
       pointer-events: none;
     }
 
@@ -337,7 +381,7 @@
       bottom: 4px;
       font-size: clamp(0.68rem, 1.1vw, 0.74rem);
       padding: 2px 7px;
-      border-radius: 999px;
+      border-radius: var(--radius-full);
       background: rgba(15, 23, 42, 0.9);
       border: 1px solid rgba(148, 163, 184, 0.6);
       color: var(--text);
@@ -359,9 +403,9 @@
       text-align: center;
     }
 
-    /* Vue modale caméra */
+    /* Vue modale camera */
     .camera-modal-view {
-      border-radius: 16px;
+      border-radius: var(--radius-lg);
       overflow: hidden;
       border: 1px solid rgba(148, 163, 184, 0.6);
       background: #020617;
@@ -385,18 +429,22 @@
       min-height: 120px;
     }
 
-    /* Onglets */
+    /* ==========================================================================
+       7. ONGLETS / TABS
+       ========================================================================== */
     .tabs {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
       margin-bottom: 10px;
-      flex-shrink: 0;
     }
+
+    .tabs::-webkit-scrollbar { height: 0; }
+    .tabs { scrollbar-width: none; }
 
     .tab-btn {
       padding: clamp(7px, 1.4vw, 10px) clamp(12px, 2vw, 16px);
-      border-radius: 999px;
+      border-radius: var(--radius-full);
       border: 1px solid var(--border-subtle);
       background: rgba(15, 23, 42, 0.9);
       color: var(--muted);
@@ -425,6 +473,9 @@
       color: var(--text);
     }
 
+    /* ==========================================================================
+       8. PANEL & GRILLE DE TILES
+       ========================================================================== */
     main {
       flex: 1;
       min-height: 0;
@@ -433,7 +484,7 @@
     }
 
     .panel {
-      border-radius: var(--radius-xl);
+      border-radius: var(--radius-lg);
       background: var(--glass);
       border: 1px solid var(--border-subtle);
       box-shadow: 0 14px 30px rgba(15, 23, 42, 0.65);
@@ -444,14 +495,13 @@
       flex-direction: column;
     }
 
-    .panel-primary { min-width: 270px; }
-
     .panel-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       margin-bottom: 10px;
-      flex-shrink: 0;
+      flex-wrap: wrap;
+      gap: 8px;
     }
 
     .panel-header h2 {
@@ -481,13 +531,23 @@
     .tiles-grid::-webkit-scrollbar { width: 6px; }
     .tiles-grid::-webkit-scrollbar-thumb {
       background: rgba(148, 163, 184, 0.6);
-      border-radius: 999px;
+      border-radius: var(--radius-full);
     }
     .tiles-grid::-webkit-scrollbar-track { background: transparent; }
 
+    .tiles-empty {
+      font-size: 0.8rem;
+      color: var(--muted);
+      padding: 8px;
+      text-align: center;
+    }
+
+    /* ==========================================================================
+       9. TILE / RACCOURCI
+       ========================================================================== */
     .tile {
       position: relative;
-      border-radius: 16px;
+      border-radius: var(--radius-lg);
       border: 1px solid rgba(148, 163, 184, 0.5);
       padding: clamp(10px, 2vw, 12px);
       background: radial-gradient(circle at top left, #0b1120, #020617);
@@ -496,12 +556,12 @@
       gap: 6px;
       cursor: pointer;
       transition: transform var(--transition-fast), box-shadow var(--transition-fast),
-        border-color var(--transition-fast), background var(--transition-fast),
-        translate var(--transition-fast);
+        border-color var(--transition-fast), background var(--transition-fast);
       text-align: left;
     }
 
-    .tile:hover {
+    .tile:hover,
+    .tile:focus-within {
       transform: translateY(-3px) scale(1.01);
       box-shadow: 0 18px 35px rgba(15, 23, 42, 0.8);
       border-color: var(--accent);
@@ -517,7 +577,7 @@
     .tile-logo {
       width: 32px;
       height: 32px;
-      border-radius: 999px;
+      border-radius: var(--radius-full);
       background: radial-gradient(circle at top left, var(--accent), #0f172a);
       display: flex;
       align-items: center;
@@ -540,18 +600,22 @@
       font-size: clamp(0.86rem, 1.4vw, 1rem);
       font-weight: 600;
       color: #f9fafb;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     .tile-sub {
       font-size: clamp(0.72rem, 1.2vw, 0.82rem);
       color: var(--muted);
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     .chip {
       align-self: flex-start;
       margin-top: 2px;
       padding: clamp(3px, 0.8vw, 5px) clamp(8px, 1.6vw, 10px);
-      border-radius: 999px;
+      border-radius: var(--radius-full);
       font-size: clamp(0.64rem, 1vw, 0.74rem);
       text-transform: uppercase;
       letter-spacing: 0.08em;
@@ -566,7 +630,7 @@
       right: 8px;
       width: 22px;
       height: 22px;
-      border-radius: 999px;
+      border-radius: var(--radius-full);
       border: 1px solid rgba(148, 163, 184, 0.7);
       background: rgba(15, 23, 42, 0.95);
       display: flex;
@@ -582,7 +646,8 @@
         border var(--transition-fast);
     }
 
-    .tile:hover .tile-edit {
+    .tile:hover .tile-edit,
+    .tile:focus-within .tile-edit {
       opacity: 1;
       transform: translateY(0);
       pointer-events: auto;
@@ -594,19 +659,20 @@
       border-color: rgba(191, 219, 254, 0.9);
     }
 
+    /* Status dot */
     .tile-status-dot {
       position: absolute;
       bottom: 6px;
       right: 8px;
       width: 10px;
       height: 10px;
-      border-radius: 999px;
+      border-radius: var(--radius-full);
       background: #6b7280;
       box-shadow: 0 0 0 0 rgba(148, 163, 184, 0.5);
     }
 
     .tile-status-up {
-      background: #22c55e;
+      background: var(--success);
       box-shadow: 0 0 6px 0 rgba(34, 197, 94, 0.9);
       animation: pulse-up 2s infinite;
     }
@@ -634,6 +700,9 @@
       100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
     }
 
+    /* ==========================================================================
+       10. FOOTER
+       ========================================================================== */
     footer {
       margin-top: 10px;
       font-size: clamp(0.68rem, 1vw, 0.76rem);
@@ -642,19 +711,21 @@
       justify-content: space-between;
       gap: 10px;
       flex-wrap: wrap;
-      flex-shrink: 0;
     }
 
     footer span { opacity: 0.85; }
     footer span strong { color: var(--accent); }
 
+    /* ==========================================================================
+       11. FAB (Floating Action Buttons)
+       ========================================================================== */
     .fab {
       position: absolute;
       right: 20px;
       bottom: calc(20px + env(safe-area-inset-bottom));
       width: 46px;
       height: 46px;
-      border-radius: 999px;
+      border-radius: var(--radius-full);
       border: 1px solid rgba(191, 219, 254, 0.8);
       background: radial-gradient(circle at top, var(--accent), #4f46e5);
       color: #020617;
@@ -663,10 +734,10 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 0 26px var(--accent-soft);
+      box-shadow: var(--shadow-glow);
       cursor: pointer;
       transition: transform var(--transition-fast), box-shadow var(--transition-fast);
-      z-index: 5;
+      z-index: var(--z-fab);
     }
 
     .fab:hover {
@@ -680,7 +751,7 @@
       bottom: calc(22px + env(safe-area-inset-bottom));
       width: 38px;
       height: 38px;
-      border-radius: 999px;
+      border-radius: var(--radius-full);
       border: 1px solid rgba(148, 163, 184, 0.8);
       background: rgba(15, 23, 42, 0.96);
       color: var(--muted);
@@ -693,7 +764,7 @@
       transition: transform var(--transition-fast), box-shadow var(--transition-fast),
         background var(--transition-fast), color var(--transition-fast),
         border var(--transition-fast);
-      z-index: 5;
+      z-index: var(--z-fab);
     }
 
     .settings-btn:hover {
@@ -701,9 +772,12 @@
       background: radial-gradient(circle at top, #111827, #020617);
       color: var(--accent);
       border-color: var(--accent-soft);
-      box-shadow: 0 0 24px var(--accent-soft);
+      box-shadow: var(--shadow-glow);
     }
 
+    /* ==========================================================================
+       12. MODALES
+       ========================================================================== */
     .modal-backdrop {
       position: fixed;
       inset: 0;
@@ -712,10 +786,17 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 10;
+      z-index: var(--z-modal);
+      opacity: 1;
+      visibility: visible;
+      transition: opacity var(--transition-fast), visibility var(--transition-fast);
     }
 
-    .modal-hidden { display: none; }
+    .modal-hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
 
     .modal-dialog {
       width: 100%;
@@ -751,7 +832,7 @@
     .modal-close {
       width: 26px;
       height: 26px;
-      border-radius: 999px;
+      border-radius: var(--radius-full);
       border: 1px solid rgba(148, 163, 184, 0.6);
       background: rgba(15, 23, 42, 0.95);
       display: flex;
@@ -773,7 +854,9 @@
 
     .modal-body { margin-bottom: 8px; }
 
-    /* Auth overlay */
+    /* ==========================================================================
+       13. OVERLAY AUTHENTIFICATION
+       ========================================================================== */
     .auth-backdrop {
       position: fixed;
       inset: 0;
@@ -782,19 +865,22 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 999;
-      transition: opacity var(--transition-fast);
+      z-index: var(--z-auth);
+      opacity: 1;
+      visibility: visible;
+      transition: opacity var(--transition-fast), visibility var(--transition-fast);
     }
 
     .auth-backdrop.auth-hidden {
       opacity: 0;
+      visibility: hidden;
       pointer-events: none;
     }
 
     .auth-card {
       background: var(--glass);
       border: 1px solid var(--border-subtle);
-      border-radius: 18px;
+      border-radius: var(--radius-lg);
       padding: 24px;
       width: min(440px, calc(100% - 32px));
       box-shadow: var(--shadow-soft);
@@ -833,6 +919,9 @@
       font-size: 0.88rem;
     }
 
+    /* ==========================================================================
+       14. FORMULAIRES
+       ========================================================================== */
     .form-group { margin-bottom: 10px; }
 
     .form-group label {
@@ -848,7 +937,7 @@
     .form-group select {
       width: 100%;
       padding: clamp(8px, 1.6vw, 10px) clamp(10px, 2vw, 12px);
-      border-radius: 999px;
+      border-radius: var(--radius-full);
       border: 1px solid var(--border-subtle);
       background: rgba(15, 23, 42, 0.95);
       color: var(--text);
@@ -859,10 +948,8 @@
     }
 
     .form-group input[type="password"] {
-      color: var(--text);
       -webkit-text-fill-color: var(--text);
       caret-color: var(--accent);
-      text-shadow: 0 0 0 var(--text);
     }
 
     .form-group input::placeholder { color: rgba(148, 163, 184, 0.7); }
@@ -881,11 +968,9 @@
       align-items: center;
     }
 
-    .password-field input {
-      padding-right: 38px;
-    }
+    .password-field input { padding-right: 38px; }
 
-    .password-toggle { 
+    .password-toggle {
       position: absolute;
       right: 8px;
       top: 50%;
@@ -893,7 +978,7 @@
       background: rgba(15, 23, 42, 0.85);
       border: 1px solid var(--border-subtle);
       color: var(--muted);
-      border-radius: 999px;
+      border-radius: var(--radius-full);
       width: 30px;
       height: 30px;
       display: inline-flex;
@@ -901,27 +986,10 @@
       justify-content: center;
       cursor: pointer;
       transition: color var(--transition-fast), border var(--transition-fast),
-        background var(--transition-fast), transform var(--transition-fast);
-    }
-
-    .auth-actions {
-      margin-top: 8px;
-      display: flex;
-      justify-content: flex-end;
-    }
-
-    .auth-actions .btn {
-      width: 100%;
-      justify-content: center;
-    }
-
-    .password-toggle:focus-visible {
-      outline: 2px solid var(--accent);
-      outline-offset: 3px;
+        background var(--transition-fast);
     }
 
     .password-toggle:hover,
-    .password-toggle:active,
     .password-toggle.password-visible {
       color: var(--text);
       border-color: var(--accent);
@@ -946,7 +1014,7 @@
 
     .file-label {
       padding: 6px 10px;
-      border-radius: 999px;
+      border-radius: var(--radius-full);
       border: 1px dashed rgba(148, 163, 184, 0.7);
       background: rgba(15, 23, 42, 0.9);
       display: inline-flex;
@@ -962,6 +1030,20 @@
       margin-top: 4px;
     }
 
+    .auth-actions {
+      margin-top: 8px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .auth-actions .btn {
+      width: 100%;
+      justify-content: center;
+    }
+
+    /* ==========================================================================
+       15. BOUTONS
+       ========================================================================== */
     .btn-row {
       display: flex;
       justify-content: space-between;
@@ -972,7 +1054,7 @@
     }
 
     .btn {
-      border-radius: 999px;
+      border-radius: var(--radius-full);
       border: none;
       padding: clamp(8px, 1.6vw, 10px) clamp(14px, 2.4vw, 18px);
       font-size: clamp(0.78rem, 1.2vw, 0.88rem);
@@ -981,8 +1063,7 @@
       align-items: center;
       gap: 6px;
       transition: transform var(--transition-fast), box-shadow var(--transition-fast),
-        background var(--transition-fast), opacity var(--transition-fast),
-        border var(--transition-fast);
+        background var(--transition-fast), opacity var(--transition-fast);
       white-space: nowrap;
     }
 
@@ -994,9 +1075,14 @@
       border: 1px solid rgba(191, 219, 254, 0.7);
     }
 
-    .btn-primary:hover {
+    .btn-primary:hover:not(:disabled) {
       transform: translateY(-1px);
-      box-shadow: 0 0 26px var(--accent-soft);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
 
     .btn-secondary {
@@ -1005,7 +1091,7 @@
       border: 1px solid rgba(148, 163, 184, 0.6);
     }
 
-    .btn-secondary:hover {
+    .btn-secondary:hover:not(:disabled) {
       background: rgba(30, 64, 175, 0.7);
       color: #e5e7eb;
     }
@@ -1016,9 +1102,7 @@
       border: 1px solid rgba(248, 113, 113, 0.7);
     }
 
-    .btn-danger:hover {
-      background: rgba(185, 28, 28, 0.95);
-    }
+    .btn-danger:hover { background: rgba(185, 28, 28, 0.95); }
 
     .btn-ghost {
       background: transparent;
@@ -1031,13 +1115,17 @@
 
     .btn-ghost span { text-decoration: underline dotted; }
 
+    /* ==========================================================================
+       16. STATUS & FEEDBACK
+       ========================================================================== */
     .status {
       font-size: clamp(0.72rem, 1vw, 0.8rem);
       color: var(--muted);
       margin-top: 6px;
+      min-height: 1.2em;
     }
 
-    .status span.ok { color: #4ade80; }
+    .status span.ok { color: var(--success); }
     .status span.err { color: var(--danger); }
 
     .modal-footer-actions {
@@ -1052,48 +1140,28 @@
 
     .modal-footer-actions code { font-size: 0.7rem; }
 
-    /* Responsive helpers */
-    .tabs::-webkit-scrollbar { height: 0; }
-    .tabs { scrollbar-width: none; }
-
-    .tile-title,
-    .tile-sub,
-    .panel-header h2,
-    footer span,
-    .quick-info {
-      overflow-wrap: anywhere;
-      word-break: break-word;
-    }
-
+    /* ==========================================================================
+       17. RESPONSIVE
+       ========================================================================== */
     @media (max-width: 480px) {
       header { flex-wrap: wrap; }
 
       .title-block h1,
-      .title-block p {
-        white-space: normal;
-      }
+      .title-block p { white-space: normal; }
 
       .top-actions {
         width: 100%;
         align-items: flex-start;
       }
 
-      .search-bar {
-        gap: 8px;
-      }
+      .search-bar { gap: 8px; }
 
       .search-wrapper,
-      .quick-info {
-        width: 100%;
-      }
+      .quick-info { width: 100%; }
 
-      .quick-info {
-        justify-content: flex-start;
-      }
+      .quick-info { justify-content: flex-start; }
 
-      .camera-strip {
-        grid-template-columns: 1fr;
-      }
+      .camera-strip { grid-template-columns: 1fr; }
 
       .tabs {
         flex-wrap: nowrap;
@@ -1101,16 +1169,11 @@
         padding-bottom: 4px;
       }
 
-      .tab-btn {
-        min-height: 44px;
-      }
-
+      .tab-btn,
       .btn,
       .modal-close,
       .settings-btn,
-      .fab {
-        min-height: 44px;
-      }
+      .fab { min-height: 44px; }
 
       .fab {
         width: 44px;
@@ -1141,41 +1204,43 @@
         align-items: flex-start;
       }
 
-      .camera-strip {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
+      .camera-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
-      .tiles-grid {
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      }
+      .tiles-grid { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
 
       .modal-dialog {
         max-width: 95vw;
-        max-height: 90vh;
         margin: 12px;
       }
     }
 
-    @media (min-width: 769px) and (max-width: 1100px) {
-      .tiles-grid {
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      }
+    @media (min-width: 769px) {
+      .tiles-grid { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
     }
 
-    @media (min-width: 1101px) {
-      .tiles-grid {
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      }
+    /* Screen reader only */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
     }
-
   </style>
 </head>
 <body>
+  <!-- Skip link pour accessibilité -->
+  <a href="#tiles" class="skip-link">Aller au contenu principal</a>
+
   <div class="app-shell">
-    <div class="matrix-bg"></div>
+    <div class="matrix-bg" aria-hidden="true"></div>
     <div class="app-content">
       <header>
-        <div class="logo-circle" id="logo-circle">
+        <div class="logo-circle" id="logo-circle" aria-hidden="true">
           <span id="logo-text">HL</span>
         </div>
         <div class="title-block">
@@ -1183,38 +1248,39 @@
           <p><span id="subtitle-span">Portail privé – services locaux &amp; containers</span></p>
         </div>
         <div class="top-actions">
-          <div class="clock" id="clock">--:--:--</div>
+          <div class="clock" id="clock" aria-live="off" aria-label="Horloge">--:--:--</div>
         </div>
       </header>
 
-      <div class="search-bar">
+      <div class="search-bar" role="search">
         <div class="search-wrapper">
-          <span class="search-icon">🔍</span>
+          <span class="search-icon" aria-hidden="true">🔍</span>
           <input
-            type="text"
+            type="search"
             id="search"
             placeholder="Filtrer les services (ex : proxmox, media, download...)"
             aria-label="Filtrer les services"
+            autocomplete="off"
           />
         </div>
-        <div class="quick-info">
-          <span>TIP</span> Tapes le nom du service pour le filtrer
+        <div class="quick-info" aria-hidden="true">
+          <span>TIP</span> Tape le nom du service pour le filtrer
         </div>
       </div>
 
-      <!-- Caméras -->
-      <div class="camera-strip" id="camera-strip"></div>
+      <!-- Bandeau caméras -->
+      <section class="camera-strip" id="camera-strip" aria-label="Aperçu des caméras"></section>
 
-      <!-- Onglets -->
-      <div class="tabs" id="tabs" role="tablist" aria-label="Filtrer les services"></div>
+      <!-- Navigation par onglets -->
+      <nav class="tabs" id="tabs" role="tablist" aria-label="Catégories de services"></nav>
 
-      <main>
-        <section class="panel panel-primary">
+      <main id="main-content">
+        <section class="panel" aria-labelledby="panel-title">
           <div class="panel-header">
-            <h2><span>Services</span> &amp; Containers</h2>
+            <h2 id="panel-title"><span>Services</span> &amp; Containers</h2>
             <small>Cliquer pour ouvrir – survoler pour éditer</small>
           </div>
-          <div class="tiles-grid" id="tiles"></div>
+          <div class="tiles-grid" id="tiles" role="list" aria-label="Liste des services"></div>
         </section>
       </main>
 
@@ -1224,17 +1290,18 @@
       </footer>
     </div>
 
-    <button class="fab" id="btn-open-modal" title="Ajouter un raccourci">+</button>
-    <button class="settings-btn" id="btn-open-settings" title="Paramètres du portail">⚙️</button>
+    <button class="fab" id="btn-open-modal" title="Ajouter un raccourci" aria-label="Ajouter un raccourci">+</button>
+    <button class="settings-btn" id="btn-open-settings" title="Paramètres du portail" aria-label="Paramètres du portail">⚙️</button>
   </div>
 
-  <div class="auth-backdrop auth-hidden" id="auth-overlay" aria-modal="true" role="dialog" aria-labelledby="auth-title">
+  <!-- Modal Authentification -->
+  <div class="auth-backdrop auth-hidden" id="auth-overlay" role="dialog" aria-modal="true" aria-labelledby="auth-title">
     <div class="auth-card">
       <div class="auth-header">
         <h2 id="auth-title">Accès portail</h2>
         <span class="auth-note">🔒 Session 1 jour</span>
       </div>
-      <form id="auth-form" aria-label="Identification du portail">
+      <form id="auth-form" aria-describedby="auth-hint">
         <div class="form-group">
           <label for="auth-username">Identifiant</label>
           <input type="text" id="auth-username" autocomplete="username" required />
@@ -1247,117 +1314,77 @@
               type="button"
               class="password-toggle"
               id="auth-password-toggle"
-              aria-label="Afficher le mot de passe pendant l'appui"
-              title="Maintiens pour afficher"
-            >
-              👁️
-            </button>
+              aria-label="Afficher le mot de passe"
+              title="Maintenir pour afficher"
+            >👁️</button>
           </div>
         </div>
         <div class="btn-row">
-          <button type="submit" class="btn btn-primary"><span>✅</span>Se connecter</button>
+          <button type="submit" class="btn btn-primary"><span aria-hidden="true">✅</span>Se connecter</button>
         </div>
         <div class="status" id="auth-status" role="status" aria-live="polite"></div>
         <div class="auth-actions">
           <button type="button" class="btn btn-secondary" id="auth-reset-btn">
-            <span>♻️</span>Réinitialiser (admin / admin)
+            <span aria-hidden="true">♻️</span>Réinitialiser (admin / admin)
           </button>
         </div>
-        <div class="auth-hint">
-          L’identifiant et le mot de passe par défaut sont <strong>admin</strong> / <strong>admin</strong>. Tu peux les modifier depuis la fenêtre de paramètres (⚙️). La session est retenue par un cookie valable jusqu’à la fin de la journée.
+        <div class="auth-hint" id="auth-hint">
+          L'identifiant et le mot de passe par défaut sont <strong>admin</strong> / <strong>admin</strong>.
+          Tu peux les modifier depuis les paramètres (⚙️). La session est retenue par un cookie valable jusqu'à la fin de la journée.
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Modal raccourcis -->
-  <div class="modal-backdrop modal-hidden" id="modal">
-    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title" tabindex="-1">
+  <!-- Modal Raccourcis -->
+  <div class="modal-backdrop modal-hidden" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-dialog">
       <div class="modal-header">
         <h2 id="modal-title"><span>Ajouter</span> un raccourci</h2>
-        <button class="modal-close" id="modal-close" type="button">✕</button>
+        <button class="modal-close" id="modal-close" type="button" aria-label="Fermer">✕</button>
       </div>
-      <form id="shortcut-form" aria-label="Gestion des raccourcis">
+      <form id="shortcut-form">
         <div class="modal-body">
           <div class="form-group">
             <label for="name">Nom du service</label>
-            <input
-              type="text"
-              id="name"
-              placeholder="Ex : Grafana, Portainer, Backups..."
-              required
-            />
+            <input type="text" id="name" placeholder="Ex : Grafana, Portainer, Backups..." required />
           </div>
           <div class="form-group">
             <label for="url">URL</label>
-            <input
-              type="url"
-              id="url"
-              placeholder="https://mon-service.local:xxxx"
-              required
-            />
+            <input type="url" id="url" placeholder="https://mon-service.local:xxxx" required />
           </div>
           <div class="form-group">
             <label for="shortcut-tab">Onglet / Catégorie</label>
             <select id="shortcut-tab"></select>
           </div>
           <div class="form-group">
-            <label>Logo (optionnel)</label>
+            <label for="logo">Logo (optionnel)</label>
             <div class="file-input-wrapper">
-              <div class="file-label">
-                <span>📁 Choisir une image</span>
-              </div>
-              <input
-                type="file"
-                id="logo"
-                accept="image/png,image/jpeg,image/webp,image/svg+xml"
-              />
+              <div class="file-label"><span aria-hidden="true">📁</span> Choisir une image</div>
+              <input type="file" id="logo" accept="image/png,image/jpeg,image/webp,image/svg+xml" />
               <span id="file-name">(aucun fichier)</span>
             </div>
             <div class="file-hint">
               Ou indique une URL d'image (prioritaire) :
-              <input
-                type="url"
-                id="logo-url"
-                placeholder="https://exemple.com/logo.png"
-                style="margin-top:6px;"
-              />
+              <input type="url" id="logo-url" placeholder="https://exemple.com/logo.png" style="margin-top:6px;" />
             </div>
-            <div class="file-hint">
-              Formats recommandés : PNG / JPG / WebP / SVG, taille max ~100 Ko si tu téléverses, image plutôt carrée (ex : 128–256 px).
-            </div>
+            <div class="file-hint">Formats : PNG / JPG / WebP / SVG, max ~100 Ko, image carrée (128–256 px).</div>
           </div>
           <div class="form-group">
             <label for="health-url">URL de santé (facultatif)</label>
-            <input
-              type="url"
-              id="health-url"
-              placeholder="https://mon-service.local/health"
-            />
-            <div class="file-hint">
-              Utilisé uniquement pour le check d'état, séparé de l'URL d'ouverture pour plus de fiabilité.
-            </div>
+            <input type="url" id="health-url" placeholder="https://mon-service.local/health" />
+            <div class="file-hint">Utilisé pour le check d'état, séparé de l'URL d'ouverture.</div>
           </div>
         </div>
         <div class="btn-row">
-          <button type="submit" class="btn btn-primary">
-            <span>💾</span> Sauvegarder
-          </button>
-          <button type="button" class="btn btn-secondary" id="btn-new-reset-form">
-            <span>✨</span> Nouveau vierge
-          </button>
-          <button type="button" class="btn btn-danger" id="btn-delete" style="display:none;">
-            <span>🗑️</span> Supprimer ce raccourci
-          </button>
+          <button type="submit" class="btn btn-primary"><span aria-hidden="true">💾</span> Sauvegarder</button>
+          <button type="button" class="btn btn-secondary" id="btn-new-reset-form"><span aria-hidden="true">✨</span> Nouveau</button>
+          <button type="button" class="btn btn-danger" id="btn-delete" style="display:none;"><span aria-hidden="true">🗑️</span> Supprimer</button>
         </div>
         <div class="status" id="status" role="status" aria-live="polite"></div>
         <div class="modal-footer-actions">
-          <button type="button" class="btn-ghost" id="btn-empty-all">
-            <span>Vider tous les raccourcis</span>
-          </button>
-          <button type="button" class="btn-ghost" id="btn-restore-defaults">
-            <span>Restaurer les raccourcis par défaut</span>
-          </button>
+          <button type="button" class="btn-ghost" id="btn-empty-all"><span>Vider tous les raccourcis</span></button>
+          <button type="button" class="btn-ghost" id="btn-restore-defaults"><span>Restaurer les valeurs par défaut</span></button>
         </div>
         <div class="modal-footer-actions">
           <span>💡 Tout est stocké dans <code>localStorage</code> de ce navigateur.</span>
@@ -1366,67 +1393,39 @@
     </div>
   </div>
 
-  <!-- Modal paramètres portail + caméras -->
-  <div class="modal-backdrop modal-hidden" id="settings-modal">
-    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title" tabindex="-1">
+  <!-- Modal Paramètres -->
+  <div class="modal-backdrop modal-hidden" id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
+    <div class="modal-dialog">
       <div class="modal-header">
         <h2 id="settings-modal-title"><span>Paramètres</span> du portail</h2>
-        <button class="modal-close" id="settings-close" type="button">✕</button>
+        <button class="modal-close" id="settings-close" type="button" aria-label="Fermer">✕</button>
       </div>
-      <form id="settings-form" aria-label="Paramètres du portail">
+      <form id="settings-form">
         <div class="modal-body">
           <div class="form-group">
             <label for="portal-title-input">Titre du portail</label>
-            <input
-              type="text"
-              id="portal-title-input"
-              placeholder="Ex : Homelab Control Hub"
-              required
-            />
+            <input type="text" id="portal-title-input" placeholder="Ex : Homelab Control Hub" required />
           </div>
           <div class="form-group">
             <label for="portal-subtitle-input">Sous-titre</label>
-            <input
-              type="text"
-              id="portal-subtitle-input"
-              placeholder="Ex : Portail privé – services locaux &amp; containers"
-              required
-            />
+            <input type="text" id="portal-subtitle-input" placeholder="Ex : Portail privé – services locaux" required />
           </div>
           <div class="form-group">
             <label for="portal-logo-text">Texte du logo (si pas d'image)</label>
-            <input
-              type="text"
-              id="portal-logo-text"
-              placeholder="Ex : HL, DC, 🧠..."
-            />
+            <input type="text" id="portal-logo-text" placeholder="Ex : HL, DC, 🧠..." />
           </div>
           <div class="form-group">
-            <label>Logo image (optionnel)</label>
+            <label for="portal-logo-file">Logo image (optionnel)</label>
             <div class="file-input-wrapper">
-              <div class="file-label">
-                <span>📁 Choisir un logo</span>
-              </div>
-              <input
-                type="file"
-                id="portal-logo-file"
-                accept="image/png,image/jpeg,image/webp,image/svg+xml"
-              />
+              <div class="file-label"><span aria-hidden="true">📁</span> Choisir un logo</div>
+              <input type="file" id="portal-logo-file" accept="image/png,image/jpeg,image/webp,image/svg+xml" />
               <span id="portal-logo-filename">(aucun fichier)</span>
             </div>
             <div class="file-hint">
-              Ou indique une URL d'image (prioritaire) :
-              <input
-                type="url"
-                id="portal-logo-url"
-                placeholder="https://exemple.com/logo.png"
-                style="margin-top:6px;"
-              />
+              Ou URL d'image (prioritaire) :
+              <input type="url" id="portal-logo-url" placeholder="https://exemple.com/logo.png" style="margin-top:6px;" />
             </div>
-            <div class="file-hint">
-              Formats recommandés : PNG / JPG / WebP / SVG, taille max ~100 Ko si tu téléverses, image plutôt carrée (ex : 128–256 px).
-              Si aucune image n’est choisie, le texte du logo est utilisé.
-            </div>
+            <div class="file-hint">Formats : PNG / JPG / WebP / SVG, max ~100 Ko, image carrée.</div>
           </div>
           <div class="form-group">
             <label for="portal-theme-select">Thème visuel</label>
@@ -1437,38 +1436,20 @@
             </select>
           </div>
 
+          <hr style="border: none; border-top: 1px solid rgba(148,163,184,0.4); margin: 10px 0;" />
+
           <div class="form-group">
             <label for="portal-auth-user">Identifiant de connexion</label>
-            <input
-              type="text"
-              id="portal-auth-user"
-              placeholder="Ex : admin, homer, jane..."
-              autocomplete="username"
-              required
-            />
-            <div class="file-hint">Modifie l’utilisateur requis pour accéder au portail.</div>
+            <input type="text" id="portal-auth-user" placeholder="Ex : admin, homer..." autocomplete="username" required />
+            <div class="file-hint">Modifie l'utilisateur requis pour accéder au portail.</div>
           </div>
-
           <div class="form-group">
             <label for="portal-auth-pass">Mot de passe</label>
             <div class="password-field">
-              <input
-                type="password"
-                id="portal-auth-pass"
-                placeholder="Mot de passe requis au login"
-                autocomplete="new-password"
-              />
-              <button
-                type="button"
-                class="password-toggle"
-                id="portal-auth-pass-toggle"
-                aria-label="Afficher le mot de passe pendant l'appui"
-                title="Maintiens pour afficher"
-              >
-                👁️
-              </button>
+              <input type="password" id="portal-auth-pass" placeholder="Mot de passe requis au login" autocomplete="new-password" />
+              <button type="button" class="password-toggle" id="portal-auth-pass-toggle" aria-label="Afficher le mot de passe" title="Maintenir pour afficher">👁️</button>
             </div>
-            <div class="file-hint">Le cookie de session est valable jusqu’à la fin de la journée. Laisse vide pour conserver le mot de passe actuel.</div>
+            <div class="file-hint">Laisse vide pour conserver le mot de passe actuel.</div>
           </div>
 
           <hr style="border: none; border-top: 1px solid rgba(148,163,184,0.4); margin: 10px 0;" />
@@ -1476,70 +1457,73 @@
           <div class="form-group">
             <label>Caméras (HTTP snapshot / flux)</label>
             <div class="file-hint">
-              Les navigateurs ne lisent pas directement le RTSP. Utilise ici des URL HTTP
-              (snapshot, MJPEG, HLS via Frigate / NVR / Home Assistant, etc.).  
-              Le clic sur la vignette ouvre maintenant une vue détaillée, avec un bouton pour ouvrir la page NVR / Frigate dans un nouvel onglet.
+              Les navigateurs ne lisent pas le RTSP. Utilise des URL HTTP (snapshot, MJPEG, HLS via Frigate / NVR / Home Assistant).
             </div>
           </div>
-
           <div id="camera-settings-fields"></div>
         </div>
 
         <div class="btn-row">
-          <button type="submit" class="btn btn-primary">
-            <span>💾</span> Sauvegarder le bandeau & les caméras
-          </button>
-          <button type="button" class="btn btn-secondary" id="btn-reset-title">
-            <span>♻️</span> Valeurs par défaut
-          </button>
+          <button type="submit" class="btn btn-primary"><span aria-hidden="true">💾</span> Sauvegarder</button>
+          <button type="button" class="btn btn-secondary" id="btn-reset-title"><span aria-hidden="true">♻️</span> Valeurs par défaut</button>
         </div>
         <div class="status" id="settings-status" role="status" aria-live="polite"></div>
         <div class="modal-footer-actions">
-          <span>🧠 Ces réglages sont aussi gardés dans <code>localStorage</code>.</span>
+          <span>🧠 Réglages gardés dans <code>localStorage</code>.</span>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Modal vue caméra plein écran -->
-  <div class="modal-backdrop modal-hidden" id="camera-modal">
-    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="camera-modal-heading" tabindex="-1">
+  <!-- Modal Caméra plein écran -->
+  <div class="modal-backdrop modal-hidden" id="camera-modal" role="dialog" aria-modal="true" aria-labelledby="camera-modal-heading">
+    <div class="modal-dialog">
       <div class="modal-header">
         <h2 id="camera-modal-heading"><span>Caméra</span> <span id="camera-modal-name"></span></h2>
-        <button class="modal-close" id="camera-modal-close" type="button">✕</button>
+        <button class="modal-close" id="camera-modal-close" type="button" aria-label="Fermer">✕</button>
       </div>
       <div class="modal-body">
         <div class="camera-modal-view">
-          <!-- pixel transparent par défaut pour Phoenix -->
-          <img
-            id="camera-modal-img"
-            alt="Flux caméra"
-            src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
-          />
+          <img id="camera-modal-img" alt="Flux caméra" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" />
           <div id="camera-modal-placeholder" class="camera-placeholder">
-            Configure l’URL snapshot HTTP de cette caméra dans les paramètres pour afficher un aperçu ici.
+            Configure l'URL snapshot HTTP de cette caméra dans les paramètres.
           </div>
         </div>
       </div>
       <div class="btn-row">
-        <button type="button" class="btn btn-primary" id="camera-modal-open-tab">
-          <span>🔗</span> Ouvrir dans un nouvel onglet
-        </button>
-        <button type="button" class="btn btn-secondary" id="camera-modal-close-bottom">
-          <span>✕</span> Fermer
-        </button>
+        <button type="button" class="btn btn-primary" id="camera-modal-open-tab"><span aria-hidden="true">🔗</span> Ouvrir dans un nouvel onglet</button>
+        <button type="button" class="btn btn-secondary" id="camera-modal-close-bottom"><span aria-hidden="true">✕</span> Fermer</button>
       </div>
       <div class="status" id="camera-modal-status" role="status" aria-live="polite"></div>
     </div>
   </div>
 
   <script>
-    const MAX_IMAGE_SIZE = 100 * 1024;
-    const HEALTH_CHECK_INTERVAL = 20000;
-    const HEALTH_TIMEOUT = 4500;
-    const DEFAULT_HEALTH_PATH = "/health";
-    const CAMERA_MODAL_REFRESH_INTERVAL = 1000; // 1 seconde
-    const AUTH_STORAGE_KEY = "homelab-auth-v1";
+    /* ==========================================================================
+       HOMELAB PORTAL - JavaScript
+       Version consolidée avec accessibilité améliorée
+       ========================================================================== */
+
+    // ============================================================================
+    // 1. CONSTANTES & CONFIGURATION
+    // ============================================================================
+    const CONFIG = {
+      MAX_IMAGE_SIZE: 100 * 1024,
+      HEALTH_CHECK_INTERVAL: 20000,
+      HEALTH_TIMEOUT: 4500,
+      DEFAULT_HEALTH_PATH: "/health",
+      CAMERA_MODAL_REFRESH: 1000,
+      CAMERA_STRIP_REFRESH: 15000,
+      CLOCK_INTERVAL: 1000,
+    };
+
+    const STORAGE_KEYS = {
+      LINKS: "homelab-links-v3",
+      TITLE: "homelab-title-v2",
+      TAB: "homelab-active-tab-v1",
+      AUTH: "homelab-auth-v1",
+    };
+
     const AUTH_COOKIE_NAME = "homelab-auth-session";
 
     const TABS = [
@@ -1553,93 +1537,23 @@
       { id: "custom", label: "Custom", icon: "⭐" },
     ];
 
-    const defaultLinksBase = [
-      {
-        name: "Proxmox",
-        url: "https://proxmox.local:8006",
-        healthUrl: "https://proxmox.local:8006/api2/json/version",
-        description: "Hyperviseur & VM / LXC",
-        chip: "Core",
-        icon: "🧬",
-        tab: "core",
-      },
-      {
-        name: "Zoraxy",
-        url: "https://zoraxy.local",
-        healthUrl: "https://zoraxy.local/health",
-        description: "Reverse proxy / SSO",
-        chip: "Edge",
-        icon: "🛡️",
-        tab: "network",
-      },
-      {
-        name: "Docker / Portainer",
-        url: "https://docker.local:9443",
-        healthUrl: "https://docker.local:9443/api/system/status",
-        description: "Stacks & containers",
-        chip: "Docker",
-        icon: "🐋",
-        tab: "core",
-      },
-      {
-        name: "Transmission",
-        url: "https://transmission.local",
-        healthUrl: "https://transmission.local/transmission/rpc",
-        description: "Downloads & torrents",
-        chip: "Media",
-        icon: "📡",
-        tab: "media",
-      },
-      {
-        name: "Emby",
-        url: "https://emby.local:8096",
-        healthUrl: "https://emby.local:8096/emby/System/Ping",
-        description: "Serveur multimédia",
-        chip: "Media",
-        icon: "🎬",
-        tab: "media",
-      },
-      {
-        name: "Home Assistant",
-        url: "https://ha.local:8123",
-        healthUrl: "https://ha.local:8123/api/",
-        description: "Domotique / IoT",
-        chip: "SmartHome",
-        icon: "🏠",
-        tab: "domotic",
-      },
-      {
-        name: "Frigate",
-        url: "https://frigate.local",
-        healthUrl: "https://frigate.local/api/version",
-        description: "NVR & détection IA",
-        chip: "Caméra",
-        icon: "📹",
-        tab: "camera",
-      },
-      {
-        name: "OpenWebUI / IA",
-        url: "https://ai.local",
-        healthUrl: "https://ai.local/health",
-        description: "Interface IA locale",
-        chip: "AI",
-        icon: "🧠",
-        tab: "ai",
-      },
+    const DEFAULT_LINKS = [
+      { name: "Proxmox", url: "https://proxmox.local:8006", healthUrl: "https://proxmox.local:8006/api2/json/version", description: "Hyperviseur & VM / LXC", chip: "Core", icon: "🧬", tab: "core" },
+      { name: "Zoraxy", url: "https://zoraxy.local", healthUrl: "https://zoraxy.local/health", description: "Reverse proxy / SSO", chip: "Edge", icon: "🛡️", tab: "network" },
+      { name: "Docker / Portainer", url: "https://docker.local:9443", healthUrl: "https://docker.local:9443/api/system/status", description: "Stacks & containers", chip: "Docker", icon: "🐋", tab: "core" },
+      { name: "Transmission", url: "https://transmission.local", healthUrl: "https://transmission.local/transmission/rpc", description: "Downloads & torrents", chip: "Media", icon: "📡", tab: "media" },
+      { name: "Emby", url: "https://emby.local:8096", healthUrl: "https://emby.local:8096/emby/System/Ping", description: "Serveur multimédia", chip: "Media", icon: "🎬", tab: "media" },
+      { name: "Home Assistant", url: "https://ha.local:8123", healthUrl: "https://ha.local:8123/api/", description: "Domotique / IoT", chip: "SmartHome", icon: "🏠", tab: "domotic" },
+      { name: "Frigate", url: "https://frigate.local", healthUrl: "https://frigate.local/api/version", description: "NVR & détection IA", chip: "Caméra", icon: "📹", tab: "camera" },
+      { name: "OpenWebUI / IA", url: "https://ai.local", healthUrl: "https://ai.local/health", description: "Interface IA locale", chip: "AI", icon: "🧠", tab: "ai" },
     ];
 
-    const STORAGE_KEY = "homelab-links-v3";
-    const TITLE_STORAGE_KEY = "homelab-title-v2";
-    const TAB_STORAGE_KEY = "homelab-active-tab-v1";
+    const DEFAULT_AUTH = {
+      username: "admin",
+      passwordHash: "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918",
+    };
 
-    let links = [];
-    let currentEditId = null;
-    let logoDataUrl = null;
-    let statusDots = {};
-
-    let uiState = { activeTab: "all" };
-
-    let titleSettings = {
+    const DEFAULT_TITLE_SETTINGS = {
       title: "Homelab Control Hub",
       subtitle: "Portail privé – services locaux & containers",
       logoText: "HL",
@@ -1654,81 +1568,81 @@
       ],
     };
 
-    const DEFAULT_AUTH_USERNAME = "admin";
-    const DEFAULT_AUTH_PASSWORD_HASH = "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918";
-
-    let authSettings = {
-      username: DEFAULT_AUTH_USERNAME,
-      passwordHash: DEFAULT_AUTH_PASSWORD_HASH,
+    // ============================================================================
+    // 2. ÉTAT GLOBAL
+    // ============================================================================
+    let state = {
+      links: [],
+      titleSettings: { ...DEFAULT_TITLE_SETTINGS },
+      authSettings: { ...DEFAULT_AUTH },
+      uiState: { activeTab: "all" },
+      currentEditId: null,
+      logoDataUrl: null,
+      portalLogoDataUrl: null,
+      statusDots: {},
+      currentCameraModal: { name: "", snapshotUrl: "", clickUrl: "" },
+      cameraModalIntervalId: null,
+      openModals: [],
     };
 
-    let portalLogoDataUrl = null;
+    // ============================================================================
+    // 3. UTILITAIRES
+    // ============================================================================
 
-    let currentCameraModal = {
-      name: "",
-      snapshotUrl: "",
-      clickUrl: "",
+    // Génération d'ID unique
+    const generateId = (prefix = "id") => `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1e5)}`;
+
+    // Récupération sécurisée d'éléments DOM
+    const $ = (id) => document.getElementById(id);
+    const $$ = (selector) => document.querySelectorAll(selector);
+
+    // Stockage local sécurisé
+    const storage = {
+      get(key, fallback = null) {
+        try {
+          const data = localStorage.getItem(key);
+          return data ? JSON.parse(data) : fallback;
+        } catch (e) {
+          console.error(`Erreur lecture localStorage (${key})`, e);
+          return fallback;
+        }
+      },
+      set(key, value) {
+        try {
+          localStorage.setItem(key, JSON.stringify(value));
+          return true;
+        } catch (e) {
+          console.error(`Erreur écriture localStorage (${key})`, e);
+          return false;
+        }
+      },
     };
-    let cameraModalIntervalId = null;
 
-    function loadLinks() {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          links = parsed.map((l, index) => ({
-            ...l,
-            id: l.id || "migrated-" + index,
-            tab: l.tab || "custom",
-          }));
-        } else {
-          links = defaultLinksBase.map((l, index) => ({
-            ...l,
-            id: "default-" + index,
-          }));
-          saveLinks();
-        }
-      } catch (e) {
-        console.error("Erreur de lecture localStorage (links)", e);
-        links = defaultLinksBase.map((l, index) => ({
-          ...l,
-          id: "default-" + index,
-        }));
-      }
-    }
+    // Gestion des cookies
+    const cookies = {
+      get(name) {
+        const found = (document.cookie || "")
+          .split(";")
+          .map((c) => c.trim())
+          .find((c) => c.startsWith(`${name}=`));
+        return found ? found.split("=")[1] : null;
+      },
+      set(name, value, expiresDate) {
+        document.cookie = `${name}=${value}; expires=${expiresDate.toUTCString()}; path=/; SameSite=Lax`;
+      },
+      delete(name) {
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax`;
+      },
+    };
 
-    function saveLinks() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(links));
-      } catch (e) {
-        console.error("Erreur d'écriture localStorage (links)", e);
-      }
-    }
+    // Vérification si une icône est une image
+    const isImageIcon = (icon) =>
+      typeof icon === "string" &&
+      (icon.startsWith("data:image") || icon.startsWith("http://") || icon.startsWith("https://"));
 
-    function loadTitleSettings() {
-      try {
-        const stored = localStorage.getItem(TITLE_STORAGE_KEY);
-        if (stored) {
-          const obj = JSON.parse(stored);
-          titleSettings = {
-            ...titleSettings,
-            ...obj,
-            cameras: obj.cameras || titleSettings.cameras,
-          };
-        }
-      } catch (e) {
-        console.error("Erreur de lecture localStorage (title)", e);
-      }
-    }
-
-    function saveTitleSettings() {
-      try {
-        localStorage.setItem(TITLE_STORAGE_KEY, JSON.stringify(titleSettings));
-      } catch (e) {
-        console.error("Erreur d'écriture localStorage (title)", e);
-      }
-    }
-
+    // ============================================================================
+    // 4. CRYPTOGRAPHIE (SHA-256)
+    // ============================================================================
     function rotateRight(value, amount) {
       return (value >>> amount) | (value << (32 - amount));
     }
@@ -1749,42 +1663,29 @@
 
       const words = [];
       for (let i = 0; i < data.length; i++) {
-        words[i >> 2] |= data[i] << ((3 - i % 4) * 8);
+        words[i >> 2] |= data[i] << ((3 - (i % 4)) * 8);
       }
 
       const bitLength = data.length * 8;
       words[bitLength >> 5] |= 0x80 << (24 - (bitLength % 32));
-      words[((bitLength + 64 >> 9) << 4) + 15] = bitLength;
+      words[(((bitLength + 64) >> 9) << 4) + 15] = bitLength;
 
-      let h0 = 0x6a09e667;
-      let h1 = 0xbb67ae85;
-      let h2 = 0x3c6ef372;
-      let h3 = 0xa54ff53a;
-      let h4 = 0x510e527f;
-      let h5 = 0x9b05688c;
-      let h6 = 0x1f83d9ab;
-      let h7 = 0x5be0cd19;
+      let [h0, h1, h2, h3, h4, h5, h6, h7] = [
+        0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+        0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
+      ];
 
       const w = new Array(64);
 
       for (let i = 0; i < words.length; i += 16) {
-        for (let t = 0; t < 16; t++) {
-          w[t] = words[i + t];
-        }
+        for (let t = 0; t < 16; t++) w[t] = words[i + t];
         for (let t = 16; t < 64; t++) {
           const s0 = rotateRight(w[t - 15], 7) ^ rotateRight(w[t - 15], 18) ^ (w[t - 15] >>> 3);
           const s1 = rotateRight(w[t - 2], 17) ^ rotateRight(w[t - 2], 19) ^ (w[t - 2] >>> 10);
           w[t] = (((w[t - 16] + s0) | 0) + ((w[t - 7] + s1) | 0)) | 0;
         }
 
-        let a = h0;
-        let b = h1;
-        let c = h2;
-        let d = h3;
-        let e = h4;
-        let f = h5;
-        let g = h6;
-        let h = h7;
+        let [a, b, c, d, e, f, g, h] = [h0, h1, h2, h3, h4, h5, h6, h7];
 
         for (let t = 0; t < 64; t++) {
           const S1 = rotateRight(e, 6) ^ rotateRight(e, 11) ^ rotateRight(e, 25);
@@ -1794,43 +1695,35 @@
           const maj = (a & b) ^ (a & c) ^ (b & c);
           const temp2 = (S0 + maj) | 0;
 
-          h = g;
-          g = f;
-          f = e;
+          h = g; g = f; f = e;
           e = (d + temp1) | 0;
-          d = c;
-          c = b;
-          b = a;
+          d = c; c = b; b = a;
           a = (temp1 + temp2) | 0;
         }
 
-        h0 = (h0 + a) | 0;
-        h1 = (h1 + b) | 0;
-        h2 = (h2 + c) | 0;
-        h3 = (h3 + d) | 0;
-        h4 = (h4 + e) | 0;
-        h5 = (h5 + f) | 0;
-        h6 = (h6 + g) | 0;
-        h7 = (h7 + h) | 0;
+        h0 = (h0 + a) | 0; h1 = (h1 + b) | 0;
+        h2 = (h2 + c) | 0; h3 = (h3 + d) | 0;
+        h4 = (h4 + e) | 0; h5 = (h5 + f) | 0;
+        h6 = (h6 + g) | 0; h7 = (h7 + h) | 0;
       }
 
-      const hashes = [h0, h1, h2, h3, h4, h5, h6, h7];
-      return hashes.map((x) => (x >>> 0).toString(16).padStart(8, "0")).join("");
+      return [h0, h1, h2, h3, h4, h5, h6, h7]
+        .map((x) => (x >>> 0).toString(16).padStart(8, "0"))
+        .join("");
     }
 
     async function hashPassword(value) {
       const data = new TextEncoder().encode(value);
-
       try {
-        if (typeof crypto !== "undefined" && crypto.subtle && crypto.subtle.digest) {
+        if (crypto?.subtle?.digest) {
           const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-          const hashArray = Array.from(new Uint8Array(hashBuffer));
-          return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+          return Array.from(new Uint8Array(hashBuffer))
+            .map((b) => b.toString(16).padStart(2, "0"))
+            .join("");
         }
       } catch (e) {
-        console.warn("WebCrypto SHA-256 indisponible, utilisation du fallback", e);
+        console.warn("WebCrypto indisponible, fallback SHA-256", e);
       }
-
       return sha256Fallback(data);
     }
 
@@ -1840,155 +1733,213 @@
       return /^[0-9a-f]{64}$/.test(normalized) ? normalized : null;
     }
 
-    function resetAuthToDefaults(statusMessage = "") {
-      authSettings = { username: DEFAULT_AUTH_USERNAME, passwordHash: DEFAULT_AUTH_PASSWORD_HASH };
-      saveAuthSettings();
-      updateAuthOverlayFields();
+    // ============================================================================
+    // 5. GESTION DES MODALES (Accessibilité)
+    // ============================================================================
+    const modalManager = {
+      focusableSelector: 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      previousFocus: null,
 
-      const authUserInput = document.getElementById("portal-auth-user");
-      const authPassInput = document.getElementById("portal-auth-pass");
-      if (authUserInput) authUserInput.value = authSettings.username;
-      if (authPassInput) authPassInput.value = "";
+      open(modalId, focusFirst = true) {
+        const modal = $(modalId);
+        if (!modal) return;
 
-      clearAuthCookie();
-      const statusEl = document.getElementById("auth-status");
-      if (statusEl && statusMessage) {
-        statusEl.innerHTML = `<span class="ok">${statusMessage}</span>`;
+        // Sauvegarder le focus actuel
+        this.previousFocus = document.activeElement;
+
+        // Afficher la modale
+        modal.classList.remove("modal-hidden", "auth-hidden");
+        state.openModals.push(modalId);
+
+        // Focus trap
+        if (focusFirst) {
+          requestAnimationFrame(() => {
+            const focusable = modal.querySelectorAll(this.focusableSelector);
+            if (focusable.length) focusable[0].focus();
+          });
+        }
+
+        // Piège de focus
+        modal.addEventListener("keydown", this.trapFocus);
+      },
+
+      close(modalId) {
+        const modal = $(modalId);
+        if (!modal) return;
+
+        modal.classList.add("modal-hidden");
+        if (modalId === "auth-overlay") modal.classList.add("auth-hidden");
+
+        state.openModals = state.openModals.filter((id) => id !== modalId);
+        modal.removeEventListener("keydown", this.trapFocus);
+
+        // Restaurer le focus
+        if (this.previousFocus && typeof this.previousFocus.focus === "function") {
+          this.previousFocus.focus();
+        }
+      },
+
+      trapFocus(e) {
+        if (e.key !== "Tab") return;
+
+        const modal = e.currentTarget;
+        const focusable = modal.querySelectorAll(modalManager.focusableSelector);
+        if (!focusable.length) return;
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      },
+
+      closeAll() {
+        [...state.openModals].forEach((id) => this.close(id));
+      },
+    };
+
+    // ============================================================================
+    // 6. DONNÉES : CHARGEMENT & SAUVEGARDE
+    // ============================================================================
+    function loadLinks() {
+      const stored = storage.get(STORAGE_KEYS.LINKS);
+      if (stored) {
+        state.links = stored.map((l, i) => ({
+          ...l,
+          id: l.id || `migrated-${i}`,
+          tab: l.tab || "custom",
+        }));
+      } else {
+        state.links = DEFAULT_LINKS.map((l, i) => ({ ...l, id: `default-${i}` }));
+        saveLinks();
       }
     }
 
-    function ensureAuthDefaultsPersisted() {
-      let updated = false;
-      if (!authSettings.username) {
-        authSettings.username = DEFAULT_AUTH_USERNAME;
-        updated = true;
+    function saveLinks() {
+      storage.set(STORAGE_KEYS.LINKS, state.links);
+    }
+
+    function loadTitleSettings() {
+      const stored = storage.get(STORAGE_KEYS.TITLE);
+      if (stored) {
+        state.titleSettings = {
+          ...DEFAULT_TITLE_SETTINGS,
+          ...stored,
+          cameras: stored.cameras || DEFAULT_TITLE_SETTINGS.cameras,
+        };
       }
-      const normalizedHash = normalizePasswordHash(authSettings.passwordHash);
-      if (!normalizedHash) {
-        authSettings.passwordHash = DEFAULT_AUTH_PASSWORD_HASH;
-        updated = true;
-      } else if (normalizedHash !== authSettings.passwordHash) {
-        authSettings.passwordHash = normalizedHash;
-        updated = true;
-      }
-      if (updated) {
-        saveAuthSettings();
-      }
+    }
+
+    function saveTitleSettings() {
+      storage.set(STORAGE_KEYS.TITLE, state.titleSettings);
     }
 
     async function loadAuthSettings() {
-      try {
-        const stored = localStorage.getItem(AUTH_STORAGE_KEY);
-        if (stored) {
-          const obj = JSON.parse(stored);
-          authSettings = {
-            ...authSettings,
-            ...obj,
-          };
+      const stored = storage.get(STORAGE_KEYS.AUTH);
+      if (stored) {
+        state.authSettings = { ...DEFAULT_AUTH, ...stored };
 
-          if (!authSettings.passwordHash && authSettings.password) {
-            authSettings.passwordHash = await hashPassword(authSettings.password);
-            delete authSettings.password;
-            saveAuthSettings();
-          }
-
-          const normalizedHash = normalizePasswordHash(authSettings.passwordHash);
-          if (!normalizedHash) {
-            authSettings.passwordHash = DEFAULT_AUTH_PASSWORD_HASH;
-            saveAuthSettings();
-          } else {
-            authSettings.passwordHash = normalizedHash;
-          }
-
-          if (!authSettings.username) {
-            authSettings.username = DEFAULT_AUTH_USERNAME;
-          }
-
-          if (!authSettings.passwordHash) {
-            authSettings.passwordHash = DEFAULT_AUTH_PASSWORD_HASH;
-            saveAuthSettings();
-          }
-
-          ensureAuthDefaultsPersisted();
+        // Migration ancien format
+        if (!state.authSettings.passwordHash && stored.password) {
+          state.authSettings.passwordHash = await hashPassword(stored.password);
+          delete state.authSettings.password;
+          saveAuthSettings();
         }
-      } catch (e) {
-        console.error("Erreur de lecture localStorage (auth)", e);
-      }
 
+        // Normalisation
+        const normalized = normalizePasswordHash(state.authSettings.passwordHash);
+        if (!normalized) {
+          state.authSettings.passwordHash = DEFAULT_AUTH.passwordHash;
+          saveAuthSettings();
+        } else {
+          state.authSettings.passwordHash = normalized;
+        }
+
+        if (!state.authSettings.username) {
+          state.authSettings.username = DEFAULT_AUTH.username;
+        }
+      }
       ensureAuthDefaultsPersisted();
     }
 
     function saveAuthSettings() {
-      try {
-        localStorage.setItem(
-          AUTH_STORAGE_KEY,
-          JSON.stringify({
-            username: authSettings.username,
-            passwordHash: authSettings.passwordHash,
-          })
-        );
-      } catch (e) {
-        console.error("Erreur d'écriture localStorage (auth)", e);
+      storage.set(STORAGE_KEYS.AUTH, {
+        username: state.authSettings.username,
+        passwordHash: state.authSettings.passwordHash,
+      });
+    }
+
+    function ensureAuthDefaultsPersisted() {
+      let updated = false;
+      if (!state.authSettings.username) {
+        state.authSettings.username = DEFAULT_AUTH.username;
+        updated = true;
+      }
+      const normalizedHash = normalizePasswordHash(state.authSettings.passwordHash);
+      if (!normalizedHash) {
+        state.authSettings.passwordHash = DEFAULT_AUTH.passwordHash;
+        updated = true;
+      } else if (normalizedHash !== state.authSettings.passwordHash) {
+        state.authSettings.passwordHash = normalizedHash;
+        updated = true;
+      }
+      if (updated) saveAuthSettings();
+    }
+
+    function loadTabState() {
+      const stored = storage.get(STORAGE_KEYS.TAB);
+      if (stored && TABS.some((t) => t.id === stored)) {
+        state.uiState.activeTab = stored;
       }
     }
 
-    function applyTheme() {
-      const theme = titleSettings.theme || "dark";
-      document.documentElement.setAttribute("data-theme", theme);
+    function saveTabState() {
+      storage.set(STORAGE_KEYS.TAB, state.uiState.activeTab);
     }
 
-    function applyTitleSettings() {
-      const titleEl = document.getElementById("main-title");
-      const subtitleEl = document.getElementById("subtitle-span");
-      const logoCircle = document.getElementById("logo-circle");
-
-      if (titleEl) titleEl.textContent = titleSettings.title || "";
-      if (subtitleEl) subtitleEl.textContent = titleSettings.subtitle || "";
-
-      if (logoCircle) {
-        logoCircle.innerHTML = "";
-        const logoSource = titleSettings.logoImageUrl || titleSettings.logoImage;
-        if (logoSource) {
-          const img = document.createElement("img");
-          img.src = logoSource;
-          img.alt = titleSettings.logoText || "Logo";
-          logoCircle.appendChild(img);
-        } else {
-          const span = document.createElement("span");
-          span.id = "logo-text";
-          span.textContent = titleSettings.logoText || "HL";
-          logoCircle.appendChild(span);
-        }
-      }
-    }
-
-    function getCookie(name) {
-      const cookieString = document.cookie || "";
-      const found = cookieString
-        .split(";")
-        .map((c) => c.trim())
-        .find((c) => c.startsWith(`${name}=`));
-      return found ? found.split("=")[1] : null;
+    // ============================================================================
+    // 7. AUTHENTIFICATION
+    // ============================================================================
+    function hasValidAuthSession() {
+      return Boolean(cookies.get(AUTH_COOKIE_NAME));
     }
 
     function setAuthCookieForDay() {
       const expiry = new Date();
       expiry.setHours(23, 59, 59, 999);
-      document.cookie = `${AUTH_COOKIE_NAME}=1; expires=${expiry.toUTCString()}; path=/; SameSite=Lax`;
+      cookies.set(AUTH_COOKIE_NAME, "1", expiry);
     }
 
     function clearAuthCookie() {
-      document.cookie = `${AUTH_COOKIE_NAME}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax`;
+      cookies.delete(AUTH_COOKIE_NAME);
     }
 
-    function hasValidAuthSession() {
-      return Boolean(getCookie(AUTH_COOKIE_NAME));
+    function resetAuthToDefaults(statusMessage = "") {
+      state.authSettings = { ...DEFAULT_AUTH };
+      saveAuthSettings();
+      updateAuthOverlayFields();
+
+      const authUserInput = $("portal-auth-user");
+      const authPassInput = $("portal-auth-pass");
+      if (authUserInput) authUserInput.value = state.authSettings.username;
+      if (authPassInput) authPassInput.value = "";
+
+      clearAuthCookie();
+      const statusEl = $("auth-status");
+      if (statusEl && statusMessage) {
+        statusEl.innerHTML = `<span class="ok">${statusMessage}</span>`;
+      }
     }
 
     function updateAuthOverlayFields(clearPassword = true) {
-      const userInput = document.getElementById("auth-username");
-      const passInput = document.getElementById("auth-password");
-      if (userInput) userInput.value = authSettings.username || "";
+      const userInput = $("auth-username");
+      const passInput = $("auth-password");
+      if (userInput) userInput.value = state.authSettings.username || "";
       if (passInput) {
         passInput.type = "password";
         if (clearPassword) passInput.value = "";
@@ -1996,82 +1947,18 @@
     }
 
     function showAuthOverlay(message = "") {
-      const overlay = document.getElementById("auth-overlay");
-      const statusEl = document.getElementById("auth-status");
-      if (!overlay) return;
-      overlay.classList.remove("auth-hidden");
       updateAuthOverlayFields();
+      const statusEl = $("auth-status");
       if (statusEl) statusEl.innerHTML = message;
-      setTimeout(() => {
-        const userInput = document.getElementById("auth-username");
-        if (userInput) userInput.focus();
-      }, 0);
+      modalManager.open("auth-overlay");
+      setTimeout(() => $("auth-username")?.focus(), 0);
     }
 
     function hideAuthOverlay() {
-      const overlay = document.getElementById("auth-overlay");
-      const statusEl = document.getElementById("auth-status");
-      if (!overlay) return;
-      overlay.classList.add("auth-hidden");
+      modalManager.close("auth-overlay");
+      const statusEl = $("auth-status");
       if (statusEl) statusEl.innerHTML = "";
       updateAuthOverlayFields();
-    }
-
-    function setupAuthOverlay() {
-      const form = document.getElementById("auth-form");
-      const userInput = document.getElementById("auth-username");
-      const passInput = document.getElementById("auth-password");
-      const statusEl = document.getElementById("auth-status");
-      const resetBtn = document.getElementById("auth-reset-btn");
-
-      if (!form || !userInput || !passInput) return;
-
-      if (resetBtn) {
-        resetBtn.addEventListener("click", () => {
-          const message =
-            "Identifiants réinitialisés. Connecte-toi avec <strong>admin</strong> / <strong>admin</strong>.";
-          resetAuthToDefaults(message);
-          showAuthOverlay(`<span class="ok">${message}</span>`);
-        });
-      }
-
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const username = userInput.value.trim();
-        const password = passInput.value;
-
-        if (!username || !password) {
-          if (statusEl) {
-            statusEl.innerHTML = '<span class="err">Merci de renseigner les deux champs.</span>';
-          }
-          return;
-        }
-
-        ensureAuthDefaultsPersisted();
-
-        const storedHash = normalizePasswordHash(authSettings.passwordHash);
-        if (!storedHash) {
-          resetAuthToDefaults(
-            "Identifiants corrompus réinitialisés. Utilise <strong>admin</strong> / <strong>admin</strong>."
-          );
-          updateAuthOverlayFields();
-          return;
-        }
-
-        authSettings.passwordHash = storedHash;
-
-        const passwordHash = await hashPassword(password);
-
-        if (username === authSettings.username && passwordHash === storedHash) {
-          setAuthCookieForDay();
-          if (statusEl) {
-            statusEl.innerHTML = '<span class="ok">Connexion réussie. Bon retour !</span>';
-          }
-          setTimeout(() => hideAuthOverlay(), 180);
-        } else if (statusEl) {
-          statusEl.innerHTML = '<span class="err">Identifiants incorrects.</span>';
-        }
-      });
     }
 
     function enforceAuthSession() {
@@ -2091,9 +1978,901 @@
       }
     }
 
+    function setupAuthOverlay() {
+      const form = $("auth-form");
+      const userInput = $("auth-username");
+      const passInput = $("auth-password");
+      const statusEl = $("auth-status");
+      const resetBtn = $("auth-reset-btn");
+
+      if (!form || !userInput || !passInput) return;
+
+      if (resetBtn) {
+        resetBtn.addEventListener("click", () => {
+          const msg = "Identifiants réinitialisés. Connecte-toi avec <strong>admin</strong> / <strong>admin</strong>.";
+          resetAuthToDefaults(msg);
+          showAuthOverlay(`<span class="ok">${msg}</span>`);
+        });
+      }
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const username = userInput.value.trim();
+        const password = passInput.value;
+
+        if (!username || !password) {
+          if (statusEl) statusEl.innerHTML = '<span class="err">Merci de renseigner les deux champs.</span>';
+          return;
+        }
+
+        ensureAuthDefaultsPersisted();
+
+        const storedHash = normalizePasswordHash(state.authSettings.passwordHash);
+        if (!storedHash) {
+          resetAuthToDefaults("Identifiants corrompus réinitialisés. Utilise <strong>admin</strong> / <strong>admin</strong>.");
+          updateAuthOverlayFields();
+          return;
+        }
+
+        state.authSettings.passwordHash = storedHash;
+        const passwordHash = await hashPassword(password);
+
+        if (username === state.authSettings.username && passwordHash === storedHash) {
+          setAuthCookieForDay();
+          if (statusEl) statusEl.innerHTML = '<span class="ok">Connexion réussie. Bon retour !</span>';
+          setTimeout(() => hideAuthOverlay(), 180);
+        } else if (statusEl) {
+          statusEl.innerHTML = '<span class="err">Identifiants incorrects.</span>';
+        }
+      });
+    }
+
+    // ============================================================================
+    // 8. THÈME & UI
+    // ============================================================================
+    function applyTheme() {
+      const theme = state.titleSettings.theme || "dark";
+      document.documentElement.setAttribute("data-theme", theme);
+    }
+
+    function applyTitleSettings() {
+      const titleEl = $("main-title");
+      const subtitleEl = $("subtitle-span");
+      const logoCircle = $("logo-circle");
+
+      if (titleEl) titleEl.textContent = state.titleSettings.title || "";
+      if (subtitleEl) subtitleEl.textContent = state.titleSettings.subtitle || "";
+
+      if (logoCircle) {
+        logoCircle.innerHTML = "";
+        const logoSource = state.titleSettings.logoImageUrl || state.titleSettings.logoImage;
+        if (logoSource) {
+          const img = document.createElement("img");
+          img.src = logoSource;
+          img.alt = state.titleSettings.logoText || "Logo";
+          logoCircle.appendChild(img);
+        } else {
+          const span = document.createElement("span");
+          span.id = "logo-text";
+          span.textContent = state.titleSettings.logoText || "HL";
+          logoCircle.appendChild(span);
+        }
+      }
+    }
+
+    function updateClock() {
+      const el = $("clock");
+      if (!el) return;
+      const now = new Date();
+      el.textContent = [now.getHours(), now.getMinutes(), now.getSeconds()]
+        .map((n) => String(n).padStart(2, "0"))
+        .join(":");
+    }
+
+    // ============================================================================
+    // 9. ONGLETS (TABS)
+    // ============================================================================
+    function renderTabs() {
+      const container = $("tabs");
+      if (!container) return;
+      container.innerHTML = "";
+
+      TABS.forEach((tab, index) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "tab-btn" + (tab.id === state.uiState.activeTab ? " active" : "");
+        btn.dataset.tab = tab.id;
+        btn.setAttribute("role", "tab");
+        btn.setAttribute("aria-selected", tab.id === state.uiState.activeTab ? "true" : "false");
+        btn.setAttribute("tabindex", tab.id === state.uiState.activeTab ? "0" : "-1");
+        btn.innerHTML = `<span aria-hidden="true">${tab.icon}</span>${tab.label}`;
+
+        btn.addEventListener("click", () => {
+          state.uiState.activeTab = tab.id;
+          saveTabState();
+          renderTabs();
+          renderTiles($("search")?.value || "");
+        });
+
+        // Navigation clavier dans les onglets
+        btn.addEventListener("keydown", (e) => {
+          const tabs = [...container.querySelectorAll(".tab-btn")];
+          const currentIndex = tabs.indexOf(btn);
+          let newIndex = currentIndex;
+
+          if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+            e.preventDefault();
+            newIndex = (currentIndex + 1) % tabs.length;
+          } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+            e.preventDefault();
+            newIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+          } else if (e.key === "Home") {
+            e.preventDefault();
+            newIndex = 0;
+          } else if (e.key === "End") {
+            e.preventDefault();
+            newIndex = tabs.length - 1;
+          }
+
+          if (newIndex !== currentIndex) {
+            tabs[newIndex].focus();
+            tabs[newIndex].click();
+          }
+        });
+
+        container.appendChild(btn);
+      });
+    }
+
+    function populateTabSelect() {
+      const select = $("shortcut-tab");
+      if (!select) return;
+      select.innerHTML = "";
+      TABS.filter((t) => t.id !== "all").forEach((tab) => {
+        const opt = document.createElement("option");
+        opt.value = tab.id;
+        opt.textContent = tab.label;
+        select.appendChild(opt);
+      });
+    }
+
+    // ============================================================================
+    // 10. TILES (RACCOURCIS)
+    // ============================================================================
+    function createTile(link) {
+      const tile = document.createElement("article");
+      tile.className = "tile";
+      tile.setAttribute("role", "listitem");
+      tile.setAttribute("tabindex", "0");
+      tile.setAttribute("aria-label", `${link.name || "Service"} – ${link.description || link.url || "Ouvrir"}`);
+
+      const openLink = () => {
+        if (link.url) window.open(link.url, "_blank", "noopener,noreferrer");
+      };
+
+      tile.addEventListener("click", openLink);
+      tile.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openLink();
+        }
+      });
+
+      // Header
+      const header = document.createElement("div");
+      header.className = "tile-header";
+
+      const logo = document.createElement("div");
+      logo.className = "tile-logo";
+      if (isImageIcon(link.icon)) {
+        const img = document.createElement("img");
+        img.src = link.icon;
+        img.alt = "";
+        logo.appendChild(img);
+      } else {
+        logo.textContent = link.icon || (link.name ? link.name[0] : "?");
+      }
+
+      const titleBox = document.createElement("div");
+      const title = document.createElement("div");
+      title.className = "tile-title";
+      title.textContent = link.name || "Service";
+
+      const sub = document.createElement("div");
+      sub.className = "tile-sub";
+      sub.textContent = link.description || link.url || "";
+
+      titleBox.appendChild(title);
+      titleBox.appendChild(sub);
+      header.appendChild(logo);
+      header.appendChild(titleBox);
+      tile.appendChild(header);
+
+      // Chip
+      if (link.chip) {
+        const chip = document.createElement("div");
+        chip.className = "chip";
+        chip.textContent = link.chip;
+        tile.appendChild(chip);
+      }
+
+      // Bouton éditer
+      const editBtn = document.createElement("button");
+      editBtn.type = "button";
+      editBtn.className = "tile-edit";
+      editBtn.title = "Modifier ce raccourci";
+      editBtn.setAttribute("aria-label", `Modifier ${link.name}`);
+      editBtn.textContent = "✏️";
+      editBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        openShortcutModal("edit", link.id);
+      });
+      tile.appendChild(editBtn);
+
+      // Status dot
+      const statusDot = document.createElement("div");
+      statusDot.className = "tile-status-dot tile-status-unknown";
+      statusDot.title = "État : inconnu";
+      statusDot.setAttribute("aria-hidden", "true");
+      tile.appendChild(statusDot);
+      state.statusDots[link.id] = statusDot;
+
+      return tile;
+    }
+
+    function renderTiles(filter = "") {
+      const container = $("tiles");
+      if (!container) return;
+      container.innerHTML = "";
+      state.statusDots = {};
+      const f = filter.trim().toLowerCase();
+
+      let visibleCount = 0;
+      state.links.forEach((link) => {
+        const tab = link.tab || "custom";
+        if (state.uiState.activeTab !== "all" && tab !== state.uiState.activeTab) return;
+
+        const hay = `${link.name || ""} ${link.description || ""}`.toLowerCase();
+        if (f && !hay.includes(f)) return;
+
+        container.appendChild(createTile(link));
+        visibleCount++;
+      });
+
+      if (!visibleCount) {
+        const msg = document.createElement("div");
+        msg.className = "tiles-empty";
+        msg.textContent = "Aucun service pour cet onglet / filtre. Ajoute un raccourci avec le + ou restaure les valeurs par défaut.";
+        container.appendChild(msg);
+      }
+    }
+
+    // ============================================================================
+    // 11. MODAL RACCOURCIS
+    // ============================================================================
+    function openShortcutModal(mode = "new", id = null) {
+      const titleEl = $("modal-title");
+      const deleteBtn = $("btn-delete");
+      const status = $("status");
+      const fileNameEl = $("file-name");
+      const form = $("shortcut-form");
+      const inputName = $("name");
+      const inputUrl = $("url");
+      const tabSelect = $("shortcut-tab");
+      const logoUrlInput = $("logo-url");
+      const healthUrlInput = $("health-url");
+
+      state.logoDataUrl = null;
+      if (status) status.innerHTML = "";
+      if (fileNameEl) fileNameEl.textContent = "(aucun fichier)";
+      if (logoUrlInput) logoUrlInput.value = "";
+      if (healthUrlInput) healthUrlInput.value = "";
+      if (form) form.reset();
+
+      if (mode === "edit" && id) {
+        const link = state.links.find((l) => l.id === id);
+        if (!link) return;
+
+        state.currentEditId = id;
+        if (titleEl) titleEl.innerHTML = '<span>Modifier</span> le raccourci';
+        if (inputName) inputName.value = link.name || "";
+        if (inputUrl) inputUrl.value = link.url || "";
+        if (tabSelect) tabSelect.value = link.tab || "custom";
+        if (logoUrlInput) {
+          logoUrlInput.value = link.icon?.startsWith("http") ? link.icon : "";
+        }
+        if (healthUrlInput) healthUrlInput.value = link.healthUrl || "";
+        if (deleteBtn) deleteBtn.style.display = "inline-flex";
+      } else {
+        state.currentEditId = null;
+        if (titleEl) titleEl.innerHTML = '<span>Ajouter</span> un raccourci';
+        if (deleteBtn) deleteBtn.style.display = "none";
+        if (tabSelect) tabSelect.value = state.uiState.activeTab !== "all" ? state.uiState.activeTab : "custom";
+      }
+
+      modalManager.open("modal");
+      setTimeout(() => inputName?.focus(), 0);
+    }
+
+    function closeShortcutModal() {
+      modalManager.close("modal");
+      state.currentEditId = null;
+      state.logoDataUrl = null;
+    }
+
+    function setupShortcutForm() {
+      const form = $("shortcut-form");
+      const inputName = $("name");
+      const inputUrl = $("url");
+      const tabSelect = $("shortcut-tab");
+      const inputLogo = $("logo");
+      const inputLogoUrl = $("logo-url");
+      const inputHealthUrl = $("health-url");
+      const fileName = $("file-name");
+      const status = $("status");
+      const btnNewResetForm = $("btn-new-reset-form");
+      const btnDelete = $("btn-delete");
+      const btnEmptyAll = $("btn-empty-all");
+      const btnRestoreDefaults = $("btn-restore-defaults");
+
+      if (!form) return;
+
+      inputLogo?.addEventListener("change", () => {
+        const file = inputLogo.files?.[0];
+        if (!file) {
+          if (fileName) fileName.textContent = "(aucun fichier)";
+          state.logoDataUrl = null;
+          return;
+        }
+        if (file.size > CONFIG.MAX_IMAGE_SIZE) {
+          if (status) status.innerHTML = '<span class="err">Fichier trop gros (max ~100 Ko).</span>';
+          inputLogo.value = "";
+          if (fileName) fileName.textContent = "(aucun fichier)";
+          state.logoDataUrl = null;
+          return;
+        }
+        if (fileName) fileName.textContent = file.name;
+        const reader = new FileReader();
+        reader.onload = (e) => (state.logoDataUrl = e.target.result);
+        reader.readAsDataURL(file);
+      });
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const name = inputName?.value.trim();
+        const url = inputUrl?.value.trim();
+        const tab = tabSelect?.value || "custom";
+        const logoExternal = inputLogoUrl?.value.trim();
+        const healthUrl = inputHealthUrl?.value.trim();
+
+        if (!name || !url) {
+          if (status) status.innerHTML = '<span class="err">Merci de remplir au moins le nom et l\'URL.</span>';
+          return;
+        }
+
+        if (state.currentEditId) {
+          const index = state.links.findIndex((l) => l.id === state.currentEditId);
+          if (index !== -1) {
+            const existing = state.links[index];
+            state.links[index] = {
+              ...existing,
+              name,
+              url,
+              description: existing.description || url,
+              icon: logoExternal || state.logoDataUrl || existing.icon,
+              healthUrl: healthUrl || existing.healthUrl || "",
+              tab,
+            };
+          }
+          if (status) status.innerHTML = '<span class="ok">Raccourci mis à jour.</span>';
+        } else {
+          state.links.push({
+            id: generateId("link"),
+            name,
+            url,
+            description: url,
+            chip: "Custom",
+            icon: logoExternal || state.logoDataUrl || "⭐",
+            healthUrl,
+            tab,
+          });
+          if (status) status.innerHTML = '<span class="ok">Nouveau raccourci ajouté !</span>';
+        }
+
+        saveLinks();
+        renderTiles($("search")?.value || "");
+      });
+
+      btnNewResetForm?.addEventListener("click", () => {
+        form.reset();
+        state.logoDataUrl = null;
+        if (fileName) fileName.textContent = "(aucun fichier)";
+        state.currentEditId = null;
+        const titleEl = $("modal-title");
+        if (titleEl) titleEl.innerHTML = '<span>Ajouter</span> un raccourci';
+        if (btnDelete) btnDelete.style.display = "none";
+        if (status) status.innerHTML = "";
+        if (tabSelect) tabSelect.value = state.uiState.activeTab !== "all" ? state.uiState.activeTab : "custom";
+        if (inputLogoUrl) inputLogoUrl.value = "";
+        if (inputHealthUrl) inputHealthUrl.value = "";
+      });
+
+      btnDelete?.addEventListener("click", () => {
+        if (!state.currentEditId) return;
+        if (!confirm("Supprimer définitivement ce raccourci ?")) return;
+        state.links = state.links.filter((l) => l.id !== state.currentEditId);
+        saveLinks();
+        renderTiles($("search")?.value || "");
+        closeShortcutModal();
+      });
+
+      btnEmptyAll?.addEventListener("click", () => {
+        if (!state.links.length || !confirm("Supprimer tous les raccourcis ?")) return;
+        state.links = [];
+        saveLinks();
+        renderTiles($("search")?.value || "");
+        if (status) status.innerHTML = '<span class="ok">Tous les raccourcis ont été vidés.</span>';
+      });
+
+      btnRestoreDefaults?.addEventListener("click", () => {
+        if (!confirm("Restaurer les raccourcis par défaut ?")) return;
+        state.links = DEFAULT_LINKS.map((l, i) => ({ ...l, id: `default-${i}` }));
+        saveLinks();
+        renderTiles($("search")?.value || "");
+        if (status) status.innerHTML = '<span class="ok">Raccourcis par défaut restaurés.</span>';
+      });
+    }
+
+    // ============================================================================
+    // 12. MODAL PARAMÈTRES
+    // ============================================================================
+    function buildCameraSettingsFields() {
+      const container = $("camera-settings-fields");
+      if (!container) return;
+      container.innerHTML = "";
+      state.titleSettings.cameras.forEach((cam, index) => {
+        const wrap = document.createElement("div");
+        wrap.className = "form-group";
+        wrap.innerHTML = `
+          <label>Caméra ${index + 1}</label>
+          <input type="text" id="camera-name-${index}" placeholder="Nom (ex : Entrée)" style="margin-bottom:4px;" />
+          <input type="url" id="camera-snapshot-${index}" placeholder="URL snapshot HTTP" style="margin-bottom:4px;" />
+          <input type="url" id="camera-click-${index}" placeholder="URL au clic (page NVR / Frigate)" />
+        `;
+        container.appendChild(wrap);
+      });
+    }
+
+    function openSettingsModal() {
+      const titleInput = $("portal-title-input");
+      const subtitleInput = $("portal-subtitle-input");
+      const logoTextInput = $("portal-logo-text");
+      const logoUrlInput = $("portal-logo-url");
+      const fileNameEl = $("portal-logo-filename");
+      const themeSelect = $("portal-theme-select");
+      const authUserInput = $("portal-auth-user");
+      const authPassInput = $("portal-auth-pass");
+      const status = $("settings-status");
+
+      if (titleInput) titleInput.value = state.titleSettings.title || "";
+      if (subtitleInput) subtitleInput.value = state.titleSettings.subtitle || "";
+      if (logoTextInput) logoTextInput.value = state.titleSettings.logoText || "HL";
+      if (logoUrlInput) logoUrlInput.value = state.titleSettings.logoImageUrl || "";
+      if (themeSelect) themeSelect.value = state.titleSettings.theme || "dark";
+      if (authUserInput) authUserInput.value = state.authSettings.username || DEFAULT_AUTH.username;
+      if (authPassInput) authPassInput.value = "";
+
+      state.portalLogoDataUrl = null;
+      if (status) status.innerHTML = "";
+
+      if (fileNameEl) {
+        fileNameEl.textContent = state.titleSettings.logoImage || state.titleSettings.logoImageUrl
+          ? "(logo actuel chargé)"
+          : "(aucun fichier)";
+      }
+
+      state.titleSettings.cameras.forEach((cam, index) => {
+        const nameEl = $(`camera-name-${index}`);
+        const snapEl = $(`camera-snapshot-${index}`);
+        const clickEl = $(`camera-click-${index}`);
+        if (nameEl) nameEl.value = cam.name || "";
+        if (snapEl) snapEl.value = cam.snapshotUrl || "";
+        if (clickEl) clickEl.value = cam.clickUrl || "";
+      });
+
+      modalManager.open("settings-modal");
+      setTimeout(() => titleInput?.focus(), 0);
+    }
+
+    function closeSettingsModal() {
+      modalManager.close("settings-modal");
+      state.portalLogoDataUrl = null;
+    }
+
+    function setupSettingsForm() {
+      const form = $("settings-form");
+      const titleInput = $("portal-title-input");
+      const subtitleInput = $("portal-subtitle-input");
+      const logoTextInput = $("portal-logo-text");
+      const logoUrlInput = $("portal-logo-url");
+      const logoFileInput = $("portal-logo-file");
+      const fileNameEl = $("portal-logo-filename");
+      const themeSelect = $("portal-theme-select");
+      const authUserInput = $("portal-auth-user");
+      const authPassInput = $("portal-auth-pass");
+      const status = $("settings-status");
+      const btnResetTitle = $("btn-reset-title");
+
+      if (!form) return;
+
+      logoFileInput?.addEventListener("change", () => {
+        const file = logoFileInput.files?.[0];
+        if (!file) {
+          if (fileNameEl) fileNameEl.textContent = "(aucun fichier)";
+          state.portalLogoDataUrl = null;
+          return;
+        }
+        if (file.size > CONFIG.MAX_IMAGE_SIZE) {
+          if (status) status.innerHTML = '<span class="err">Logo trop lourd (max ~100 Ko).</span>';
+          logoFileInput.value = "";
+          if (fileNameEl) fileNameEl.textContent = "(aucun fichier)";
+          state.portalLogoDataUrl = null;
+          return;
+        }
+        if (fileNameEl) fileNameEl.textContent = file.name;
+        const reader = new FileReader();
+        reader.onload = (e) => (state.portalLogoDataUrl = e.target.result);
+        reader.readAsDataURL(file);
+      });
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const title = titleInput?.value.trim();
+        const subtitle = subtitleInput?.value.trim();
+        const logoText = logoTextInput?.value.trim() || "HL";
+        const logoExternal = logoUrlInput?.value.trim();
+        const theme = themeSelect?.value || "dark";
+        const authUser = authUserInput?.value.trim();
+        const authPass = authPassInput?.value;
+        const previousAuth = { ...state.authSettings };
+
+        if (!title || !subtitle) {
+          if (status) status.innerHTML = '<span class="err">Titre et sous-titre requis.</span>';
+          return;
+        }
+
+        if (!authUser) {
+          if (status) status.innerHTML = '<span class="err">Identifiant requis.</span>';
+          return;
+        }
+
+        state.titleSettings.title = title;
+        state.titleSettings.subtitle = subtitle;
+        state.titleSettings.logoText = logoText;
+        state.titleSettings.theme = theme;
+
+        let passwordChanged = false;
+        state.authSettings.username = authUser;
+        if (authPass) {
+          const hashed = await hashPassword(authPass);
+          state.authSettings.passwordHash = normalizePasswordHash(hashed) || DEFAULT_AUTH.passwordHash;
+          passwordChanged = true;
+        }
+
+        if (logoExternal) {
+          state.titleSettings.logoImageUrl = logoExternal;
+          state.titleSettings.logoImage = null;
+        } else if (state.portalLogoDataUrl) {
+          state.titleSettings.logoImage = state.portalLogoDataUrl;
+          state.titleSettings.logoImageUrl = "";
+        }
+
+        const cams = [];
+        state.titleSettings.cameras.forEach((_, index) => {
+          const nameEl = $(`camera-name-${index}`);
+          const snapEl = $(`camera-snapshot-${index}`);
+          const clickEl = $(`camera-click-${index}`);
+          cams.push({
+            name: nameEl?.value.trim() || "",
+            snapshotUrl: snapEl?.value.trim() || "",
+            clickUrl: clickEl?.value.trim() || "",
+          });
+        });
+        state.titleSettings.cameras = cams;
+
+        saveAuthSettings();
+        ensureAuthDefaultsPersisted();
+        updateAuthOverlayFields(false);
+        handleAuthSessionAfterSettings(previousAuth.username !== state.authSettings.username || passwordChanged);
+
+        saveTitleSettings();
+        applyTheme();
+        applyTitleSettings();
+        renderCameras();
+
+        if (status) status.innerHTML = '<span class="ok">Paramètres sauvegardés.</span>';
+      });
+
+      btnResetTitle?.addEventListener("click", () => {
+        if (!confirm("Revenir aux valeurs par défaut ?")) return;
+
+        state.titleSettings = { ...DEFAULT_TITLE_SETTINGS };
+        state.authSettings = { ...DEFAULT_AUTH };
+
+        if (authUserInput) authUserInput.value = state.authSettings.username;
+        if (authPassInput) authPassInput.value = "";
+
+        saveAuthSettings();
+        ensureAuthDefaultsPersisted();
+        updateAuthOverlayFields();
+        handleAuthSessionAfterSettings(true);
+
+        saveTitleSettings();
+        applyTheme();
+        applyTitleSettings();
+        renderCameras();
+
+        if (titleInput) titleInput.value = state.titleSettings.title;
+        if (subtitleInput) subtitleInput.value = state.titleSettings.subtitle;
+        if (logoTextInput) logoTextInput.value = state.titleSettings.logoText;
+        if (logoUrlInput) logoUrlInput.value = "";
+        if (logoFileInput) logoFileInput.value = "";
+        if (fileNameEl) fileNameEl.textContent = "(aucun fichier)";
+        if (themeSelect) themeSelect.value = state.titleSettings.theme;
+
+        buildCameraSettingsFields();
+
+        if (status) status.innerHTML = '<span class="ok">Valeurs par défaut restaurées.</span>';
+      });
+    }
+
+    // ============================================================================
+    // 13. CAMÉRAS
+    // ============================================================================
+    function renderCameras() {
+      const strip = $("camera-strip");
+      if (!strip) return;
+      strip.innerHTML = "";
+
+      state.titleSettings.cameras.forEach((cam, index) => {
+        const card = document.createElement("div");
+        card.className = "camera-card";
+        card.setAttribute("role", "button");
+        card.setAttribute("tabindex", "0");
+        card.setAttribute("aria-label", `${cam.name || `Caméra ${index + 1}`}${cam.snapshotUrl ? " : aperçu" : " : à configurer"}`);
+
+        const openCamera = () => openCameraModal(cam);
+        card.addEventListener("click", openCamera);
+        card.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openCamera();
+          }
+        });
+
+        const inner = document.createElement("div");
+        inner.className = "camera-card-inner";
+
+        if (cam.snapshotUrl) {
+          const img = document.createElement("img");
+          img.dataset.base = cam.snapshotUrl;
+          img.alt = cam.name || `Caméra ${index + 1}`;
+          img.addEventListener("error", () => (img.style.display = "none"));
+          inner.appendChild(img);
+        } else {
+          const placeholder = document.createElement("div");
+          placeholder.className = "camera-placeholder";
+          placeholder.textContent = "Configure cette caméra dans les paramètres.";
+          inner.appendChild(placeholder);
+        }
+
+        const overlay = document.createElement("div");
+        overlay.className = "camera-overlay";
+        overlay.setAttribute("aria-hidden", "true");
+
+        const label = document.createElement("div");
+        label.className = "camera-label";
+        label.textContent = cam.name || `Caméra ${index + 1}`;
+
+        card.appendChild(inner);
+        card.appendChild(overlay);
+        card.appendChild(label);
+        strip.appendChild(card);
+      });
+
+      refreshCameraSnapshots(true);
+    }
+
+    function refreshCameraSnapshots(initial = false) {
+      $$(".camera-card img").forEach((img) => {
+        const base = img.dataset.base;
+        if (!base) return;
+        const sep = base.includes("?") ? "&" : "?";
+        img.src = initial ? base : `${base}${sep}t=${Date.now()}`;
+        img.style.display = "block";
+      });
+    }
+
+    function openCameraModal(cam) {
+      const nameEl = $("camera-modal-name");
+      const imgEl = $("camera-modal-img");
+      const placeholderEl = $("camera-modal-placeholder");
+      const statusEl = $("camera-modal-status");
+      const openTabBtn = $("camera-modal-open-tab");
+
+      // Stop ancien intervalle
+      if (state.cameraModalIntervalId) {
+        clearInterval(state.cameraModalIntervalId);
+        state.cameraModalIntervalId = null;
+      }
+
+      state.currentCameraModal = {
+        name: cam.name || "",
+        snapshotUrl: cam.snapshotUrl || "",
+        clickUrl: cam.clickUrl || "",
+      };
+
+      if (nameEl) nameEl.textContent = state.currentCameraModal.name || "Caméra";
+      if (statusEl) statusEl.innerHTML = "";
+
+      if (state.currentCameraModal.snapshotUrl) {
+        const base = state.currentCameraModal.snapshotUrl;
+        const sep = base.includes("?") ? "&" : "?";
+
+        const loadFrame = () => {
+          if (imgEl) {
+            imgEl.style.display = "block";
+            imgEl.src = `${base}${sep}t=${Date.now()}`;
+          }
+          if (placeholderEl) placeholderEl.style.display = "none";
+        };
+
+        if (imgEl) {
+          imgEl.onerror = () => {
+            imgEl.style.display = "none";
+            if (placeholderEl) placeholderEl.style.display = "flex";
+            if (statusEl) statusEl.innerHTML = '<span class="err">Impossible de charger le flux.</span>';
+          };
+        }
+
+        loadFrame();
+        state.cameraModalIntervalId = setInterval(loadFrame, CONFIG.CAMERA_MODAL_REFRESH);
+      } else {
+        if (imgEl) imgEl.style.display = "none";
+        if (placeholderEl) placeholderEl.style.display = "flex";
+      }
+
+      if (openTabBtn) {
+        openTabBtn.disabled = !state.currentCameraModal.clickUrl;
+        openTabBtn.classList.toggle("btn-primary", !!state.currentCameraModal.clickUrl);
+        openTabBtn.classList.toggle("btn-secondary", !state.currentCameraModal.clickUrl);
+      }
+
+      modalManager.open("camera-modal");
+      setTimeout(() => $("camera-modal-close")?.focus(), 0);
+    }
+
+    function closeCameraModal() {
+      modalManager.close("camera-modal");
+      if (state.cameraModalIntervalId) {
+        clearInterval(state.cameraModalIntervalId);
+        state.cameraModalIntervalId = null;
+      }
+    }
+
+    // ============================================================================
+    // 14. HEALTH CHECKS
+    // ============================================================================
+    function setStatus(linkId, status) {
+      const dot = state.statusDots[linkId];
+      if (!dot) return;
+
+      dot.classList.remove("tile-status-up", "tile-status-down", "tile-status-unknown");
+
+      if (status === "up") {
+        dot.classList.add("tile-status-up");
+        dot.title = "État : UP (accessible)";
+      } else if (status === "down") {
+        dot.classList.add("tile-status-down");
+        dot.title = "État : DOWN (erreur)";
+      } else {
+        dot.classList.add("tile-status-unknown");
+        dot.title = "État : inconnu";
+      }
+    }
+
+    function getHealthUrl(link) {
+      if (link.healthUrl?.trim()) return link.healthUrl.trim();
+      if (!link.url) return null;
+      const trimmed = link.url.endsWith("/") ? link.url.slice(0, -1) : link.url;
+      return `${trimmed}${CONFIG.DEFAULT_HEALTH_PATH}`;
+    }
+
+    function pingLinkWithImage(url, linkId) {
+      const img = new Image();
+      let resolved = false;
+      const timeout = setTimeout(() => {
+        if (resolved) return;
+        resolved = true;
+        setStatus(linkId, "down");
+      }, CONFIG.HEALTH_TIMEOUT);
+
+      img.onload = () => {
+        if (resolved) return;
+        resolved = true;
+        clearTimeout(timeout);
+        setStatus(linkId, "up");
+      };
+
+      img.onerror = () => {
+        if (resolved) return;
+        resolved = true;
+        clearTimeout(timeout);
+        setStatus(linkId, "down");
+      };
+
+      img.referrerPolicy = "no-referrer";
+      img.decoding = "async";
+      const sep = url.includes("?") ? "&" : "?";
+      img.src = `${url}${sep}t=${Date.now()}`;
+    }
+
+    function pingLink(link) {
+      const url = getHealthUrl(link);
+      if (!url) {
+        setStatus(link.id, "unknown");
+        return;
+      }
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), CONFIG.HEALTH_TIMEOUT);
+
+      fetch(url, {
+        mode: "cors",
+        cache: "no-store",
+        redirect: "follow",
+        signal: controller.signal,
+      })
+        .then((response) => {
+          clearTimeout(timeout);
+          setStatus(link.id, response.ok || response.type === "opaque" ? "up" : "down");
+        })
+        .catch(() => {
+          clearTimeout(timeout);
+          // Fallback : essai via image
+          pingLinkWithImage(url, link.id);
+        });
+    }
+
+    function scheduleHealthChecks() {
+      state.links.forEach((link) => pingLink(link));
+      setInterval(() => {
+        state.links.forEach((link) => pingLink(link));
+      }, CONFIG.HEALTH_CHECK_INTERVAL);
+    }
+
+    // ============================================================================
+    // 15. RECHERCHE
+    // ============================================================================
+    function setupSearch() {
+      const search = $("search");
+      if (!search) return;
+
+      let debounceTimer;
+      search.addEventListener("input", () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          renderTiles(search.value);
+        }, 100);
+      });
+    }
+
+    // ============================================================================
+    // 16. TOGGLE MOT DE PASSE
+    // ============================================================================
     function setupPasswordVisibilityToggle(inputId, toggleId) {
-      const input = document.getElementById(inputId);
-      const toggle = document.getElementById(toggleId);
+      const input = $(inputId);
+      const toggle = $(toggleId);
       if (!input || !toggle) return;
 
       const show = () => {
@@ -2130,884 +2909,28 @@
       toggle.addEventListener("keyup", hide);
     }
 
-    function loadTabState() {
-      try {
-        const stored = localStorage.getItem(TAB_STORAGE_KEY);
-        if (stored && TABS.some(t => t.id === stored)) {
-          uiState.activeTab = stored;
-        }
-      } catch (e) {
-        console.error("Erreur de lecture localStorage (tab)", e);
-      }
-    }
-
-    function saveTabState() {
-      try {
-        localStorage.setItem(TAB_STORAGE_KEY, uiState.activeTab);
-      } catch (e) {
-        console.error("Erreur d'écriture localStorage (tab)", e);
-      }
-    }
-
-    function renderTabs() {
-      const container = document.getElementById("tabs");
-      container.innerHTML = "";
-
-      TABS.forEach(tab => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "tab-btn" + (tab.id === uiState.activeTab ? " active" : "");
-        btn.dataset.tab = tab.id;
-        btn.setAttribute("role", "tab");
-        btn.setAttribute("aria-selected", tab.id === uiState.activeTab ? "true" : "false");
-        btn.setAttribute("tabindex", tab.id === uiState.activeTab ? "0" : "-1");
-        btn.innerHTML = `<span>${tab.icon}</span>${tab.label}`;
-        btn.addEventListener("click", () => {
-          uiState.activeTab = tab.id;
-          saveTabState();
-          renderTabs();
-          renderTiles(document.getElementById("search").value || "");
-        });
-        container.appendChild(btn);
-      });
-    }
-
-    function isImageIcon(icon) {
-      return (
-        typeof icon === "string" &&
-        (icon.startsWith("data:image") || icon.startsWith("http://") || icon.startsWith("https://"))
-      );
-    }
-
-    function createTile(link) {
-      const tile = document.createElement("div");
-      tile.className = "tile";
-      tile.setAttribute(
-        "data-search",
-        ((link.name || "") + " " + (link.description || "")).toLowerCase()
-      );
-      tile.setAttribute("role", "button");
-      tile.setAttribute(
-        "aria-label",
-        `${link.name || "Service"} – ${link.description || link.url || "Ouvrir le lien"}`
-      );
-      tile.setAttribute("tabindex", "0");
-
-      tile.addEventListener("click", () => {
-        if (!link.url) return;
-        window.open(link.url, "_blank", "noopener,noreferrer");
-      });
-
-      tile.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          if (link.url) {
-            window.open(link.url, "_blank", "noopener,noreferrer");
-          }
-        }
-      });
-
-      const header = document.createElement("div");
-      header.className = "tile-header";
-
-      const logo = document.createElement("div");
-      logo.className = "tile-logo";
-
-      if (isImageIcon(link.icon)) {
-        const img = document.createElement("img");
-        img.src = link.icon;
-        img.alt = link.name || "logo";
-        logo.appendChild(img);
-      } else {
-        logo.textContent = link.icon || (link.name ? link.name[0] : "?");
-      }
-
-      const titleBox = document.createElement("div");
-      const title = document.createElement("div");
-      title.className = "tile-title";
-      title.textContent = link.name || "Service";
-
-      const sub = document.createElement("div");
-      sub.className = "tile-sub";
-      sub.textContent = link.description || link.url || "";
-
-      titleBox.appendChild(title);
-      titleBox.appendChild(sub);
-
-      header.appendChild(logo);
-      header.appendChild(titleBox);
-
-      tile.appendChild(header);
-
-      if (link.chip) {
-        const chip = document.createElement("div");
-        chip.className = "chip";
-        chip.textContent = link.chip;
-        tile.appendChild(chip);
-      }
-
-      const editBtn = document.createElement("button");
-      editBtn.type = "button";
-      editBtn.className = "tile-edit";
-      editBtn.title = "Modifier ce raccourci";
-      editBtn.textContent = "✏️";
-      editBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        openShortcutModal("edit", link.id);
-      });
-      tile.appendChild(editBtn);
-
-      const statusDot = document.createElement("div");
-      statusDot.className = "tile-status-dot tile-status-unknown";
-      statusDot.title = "État : inconnu";
-      tile.appendChild(statusDot);
-      statusDots[link.id] = statusDot;
-
-      return tile;
-    }
-
-    function renderTiles(filter = "") {
-      const container = document.getElementById("tiles");
-      container.innerHTML = "";
-      statusDots = {};
-      const f = filter.trim().toLowerCase();
-
-      links.forEach((link) => {
-        const tab = link.tab || "custom";
-        if (uiState.activeTab !== "all" && tab !== uiState.activeTab) {
-          return;
-        }
-        const hay = (link.name || "") + " " + (link.description || "");
-        if (f && !hay.toLowerCase().includes(f)) {
-          return;
-        }
-        const tile = createTile(link);
-        container.appendChild(tile);
-      });
-
-      if (!container.children.length) {
-        const msg = document.createElement("div");
-        msg.style.fontSize = "0.8rem";
-        msg.style.color = "var(--muted)";
-        msg.style.padding = "8px";
-        msg.textContent =
-          "Aucun service pour cet onglet / filtre. Ajoute un raccourci avec le + en bas à droite ou restaure les valeurs par défaut.";
-        container.appendChild(msg);
-      }
-    }
-
-    function updateClock() {
-      const el = document.getElementById("clock");
-      const now = new Date();
-      const hh = String(now.getHours()).padStart(2, "0");
-      const mm = String(now.getMinutes()).padStart(2, "0");
-      const ss = String(now.getSeconds()).padStart(2, "0");
-      el.textContent = `${hh}:${mm}:${ss}`;
-    }
-
-    function populateTabSelect() {
-      const select = document.getElementById("shortcut-tab");
-      select.innerHTML = "";
-      TABS.filter(t => t.id !== "all").forEach(tab => {
-        const opt = document.createElement("option");
-        opt.value = tab.id;
-        opt.textContent = tab.label;
-        select.appendChild(opt);
-      });
-    }
-
-    function openShortcutModal(mode = "new", id = null) {
-      const modal = document.getElementById("modal");
-      const titleEl = document.getElementById("modal-title");
-      const deleteBtn = document.getElementById("btn-delete");
-      const status = document.getElementById("status");
-      const fileNameEl = document.getElementById("file-name");
-      const form = document.getElementById("shortcut-form");
-      const inputName = document.getElementById("name");
-      const inputUrl = document.getElementById("url");
-      const tabSelect = document.getElementById("shortcut-tab");
-      const logoUrlInput = document.getElementById("logo-url");
-      const healthUrlInput = document.getElementById("health-url");
-
-      logoDataUrl = null;
-      status.innerHTML = "";
-      fileNameEl.textContent = "(aucun fichier)";
-      logoUrlInput.value = "";
-      healthUrlInput.value = "";
-      form.reset();
-
-      if (mode === "edit" && id) {
-        const link = links.find((l) => l.id === id);
-        if (!link) return;
-
-        currentEditId = id;
-        titleEl.innerHTML = '<span>Modifier</span> le raccourci';
-        inputName.value = link.name || "";
-        inputUrl.value = link.url || "";
-        tabSelect.value = link.tab || "custom";
-        logoUrlInput.value =
-          link.icon && typeof link.icon === "string" && link.icon.startsWith("http")
-            ? link.icon
-            : "";
-        healthUrlInput.value = link.healthUrl || "";
-        deleteBtn.style.display = "inline-flex";
-      } else {
-        currentEditId = null;
-        titleEl.innerHTML = '<span>Ajouter</span> un raccourci';
-        deleteBtn.style.display = "none";
-        tabSelect.value = uiState.activeTab !== "all" ? uiState.activeTab : "custom";
-      }
-
-      modal.classList.remove("modal-hidden");
-      setTimeout(() => inputName.focus(), 0);
-    }
-
-    function closeShortcutModal() {
-      const modal = document.getElementById("modal");
-      modal.classList.add("modal-hidden");
-      currentEditId = null;
-      logoDataUrl = null;
-    }
-
-    function setupShortcutForm() {
-      const form = document.getElementById("shortcut-form");
-      const inputName = document.getElementById("name");
-      const inputUrl = document.getElementById("url");
-      const tabSelect = document.getElementById("shortcut-tab");
-      const inputLogo = document.getElementById("logo");
-      const inputLogoUrl = document.getElementById("logo-url");
-      const inputHealthUrl = document.getElementById("health-url");
-      const fileName = document.getElementById("file-name");
-      const status = document.getElementById("status");
-      const btnNewResetForm = document.getElementById("btn-new-reset-form");
-      const btnDelete = document.getElementById("btn-delete");
-      const btnEmptyAll = document.getElementById("btn-empty-all");
-      const btnRestoreDefaults = document.getElementById("btn-restore-defaults");
-
-      inputLogo.addEventListener("change", () => {
-        const file = inputLogo.files && inputLogo.files[0];
-        if (!file) {
-          fileName.textContent = "(aucun fichier)";
-          logoDataUrl = null;
-          return;
-        }
-        if (file.size > MAX_IMAGE_SIZE) {
-          status.innerHTML =
-            '<span class="err">Fichier trop gros (max ~100 Ko). Choisis une image plus légère.</span>';
-          inputLogo.value = "";
-          fileName.textContent = "(aucun fichier)";
-          logoDataUrl = null;
-          return;
-        }
-        fileName.textContent = file.name;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          logoDataUrl = e.target.result;
-        };
-        reader.readAsDataURL(file);
-      });
-
-      form.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const name = inputName.value.trim();
-        const url = inputUrl.value.trim();
-        const tab = tabSelect.value || "custom";
-        const logoExternal = inputLogoUrl.value.trim();
-        const healthUrl = inputHealthUrl.value.trim();
-
-        if (!name || !url) {
-          status.innerHTML =
-            '<span class="err">Merci de remplir au moins le nom et l’URL.</span>';
-          return;
-        }
-
-        if (currentEditId) {
-          const index = links.findIndex((l) => l.id === currentEditId);
-          if (index !== -1) {
-            const existing = links[index];
-            links[index] = {
-              ...existing,
-              name,
-              url,
-              description: existing.description || url,
-              icon: logoExternal || logoDataUrl || existing.icon,
-              healthUrl: healthUrl || existing.healthUrl || "",
-              tab,
-            };
-          }
-          status.innerHTML =
-            '<span class="ok">Raccourci mis à jour avec succès.</span>';
-        } else {
-          const newLink = {
-            id: "link-" + Date.now() + "-" + Math.floor(Math.random() * 1e5),
-            name,
-            url,
-            description: url,
-            chip: "Custom",
-            icon: logoExternal || logoDataUrl || "⭐",
-            healthUrl,
-            tab,
-          };
-          links.push(newLink);
-          status.innerHTML =
-            '<span class="ok">Nouveau raccourci ajouté !</span>';
-        }
-
-        saveLinks();
-        renderTiles(document.getElementById("search").value || "");
-      });
-
-      btnNewResetForm.addEventListener("click", () => {
-        form.reset();
-        logoDataUrl = null;
-        fileName.textContent = "(aucun fichier)";
-        currentEditId = null;
-        document.getElementById("modal-title").innerHTML =
-          '<span>Ajouter</span> un raccourci';
-        btnDelete.style.display = "none";
-        status.innerHTML = "";
-        tabSelect.value = uiState.activeTab !== "all" ? uiState.activeTab : "custom";
-        logoUrlInput.value = "";
-        healthUrlInput.value = "";
-      });
-
-      btnDelete.addEventListener("click", () => {
-        if (!currentEditId) return;
-        if (!confirm("Supprimer définitivement ce raccourci de ta startpage ?")) {
-          return;
-        }
-        links = links.filter((l) => l.id !== currentEditId);
-        saveLinks();
-        renderTiles(document.getElementById("search").value || "");
-        closeShortcutModal();
-      });
-
-      btnEmptyAll.addEventListener("click", () => {
-        if (!links.length ||
-          !confirm("Tu es sûr ? Tous les raccourcis vont être supprimés. La grille sera totalement vide.")
-        ) {
-          return;
-        }
-        links = [];
-        saveLinks();
-        renderTiles(document.getElementById("search").value || "");
-        status.innerHTML =
-          '<span class="ok">Tous les raccourcis ont été vidés. Tu peux en recréer ou restaurer les valeurs par défaut.</span>';
-      });
-
-      btnRestoreDefaults.addEventListener("click", () => {
-        if (!confirm("Restaurer les raccourcis par défaut écrasera la liste actuelle. Continuer ?")) {
-          return;
-        }
-        links = defaultLinksBase.map((l, index) => ({
-          ...l,
-          id: "default-" + index,
-        }));
-        saveLinks();
-        renderTiles(document.getElementById("search").value || "");
-        status.innerHTML =
-          '<span class="ok">Raccourcis par défaut restaurés.</span>';
-      });
-    }
-
-    function buildCameraSettingsFields() {
-      const container = document.getElementById("camera-settings-fields");
-      container.innerHTML = "";
-      titleSettings.cameras.forEach((cam, index) => {
-        const wrap = document.createElement("div");
-        wrap.className = "form-group";
-        wrap.innerHTML = `
-          <label>Caméra ${index + 1}</label>
-          <input
-            type="text"
-            id="camera-name-${index}"
-            placeholder="Nom (ex : Entrée)"
-            style="margin-bottom:4px;"
-          />
-          <input
-            type="url"
-            id="camera-snapshot-${index}"
-            placeholder="URL snapshot / flux HTTP (ex : http://nvr/snap.jpg)"
-            style="margin-bottom:4px;"
-          />
-          <input
-            type="url"
-            id="camera-click-${index}"
-            placeholder="URL au clic (ex : page NVR / Frigate)"
-          />
-        `;
-        container.appendChild(wrap);
-      });
-    }
-
-    function renderCameras() {
-      const strip = document.getElementById("camera-strip");
-      strip.innerHTML = "";
-      titleSettings.cameras.forEach((cam, index) => {
-        const card = document.createElement("div");
-        card.className = "camera-card";
-        card.setAttribute("role", "button");
-        card.setAttribute("tabindex", "0");
-        card.setAttribute(
-          "aria-label",
-          (cam.name || `Caméra ${index + 1}`) + (cam.snapshotUrl ? " : aperçu" : " : à configurer")
-        );
-
-        card.addEventListener("click", () => {
-          openCameraModal(cam);
-        });
-
-        card.addEventListener("keydown", (event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            openCameraModal(cam);
-          }
-        });
-
-        const inner = document.createElement("div");
-        inner.className = "camera-card-inner";
-
-        if (cam.snapshotUrl) {
-          const img = document.createElement("img");
-          img.dataset.base = cam.snapshotUrl;
-          img.alt = cam.name || "Caméra " + (index + 1);
-          img.addEventListener("error", () => {
-            img.style.display = "none";
-          });
-          inner.appendChild(img);
-        } else {
-          const placeholder = document.createElement("div");
-          placeholder.className = "camera-placeholder";
-          placeholder.textContent =
-            "Configure cette caméra dans les paramètres (snapshot HTTP / page NVR).";
-          inner.appendChild(placeholder);
-        }
-
-        const overlay = document.createElement("div");
-        overlay.className = "camera-overlay";
-
-        const label = document.createElement("div");
-        label.className = "camera-label";
-        label.textContent = cam.name || `Caméra ${index + 1}`;
-
-        card.appendChild(inner);
-        card.appendChild(overlay);
-        card.appendChild(label);
-
-        strip.appendChild(card);
-      });
-
-      refreshCameraSnapshots(true);
-    }
-
-    function refreshCameraSnapshots(initial = false) {
-      const imgs = document.querySelectorAll(".camera-card img");
-      imgs.forEach((img) => {
-        const base = img.dataset.base;
-        if (!base) return;
-        const sep = base.includes("?") ? "&" : "?";
-        const url = initial ? base : `${base}${sep}t=${Date.now()}`;
-        img.src = url;
-        img.style.display = "block";
-      });
-    }
-
-    function openSettingsModal() {
-      const modal = document.getElementById("settings-modal");
-      const titleInput = document.getElementById("portal-title-input");
-      const subtitleInput = document.getElementById("portal-subtitle-input");
-      const logoTextInput = document.getElementById("portal-logo-text");
-      const logoUrlInput = document.getElementById("portal-logo-url");
-      const fileNameEl = document.getElementById("portal-logo-filename");
-      const themeSelect = document.getElementById("portal-theme-select");
-      const authUserInput = document.getElementById("portal-auth-user");
-      const authPassInput = document.getElementById("portal-auth-pass");
-      const status = document.getElementById("settings-status");
-
-      titleInput.value = titleSettings.title || "";
-      subtitleInput.value = titleSettings.subtitle || "";
-      logoTextInput.value = titleSettings.logoText || "HL";
-      logoUrlInput.value = titleSettings.logoImageUrl || "";
-      themeSelect.value = titleSettings.theme || "dark";
-      if (authUserInput) authUserInput.value = authSettings.username || DEFAULT_AUTH_USERNAME;
-      if (authPassInput) authPassInput.value = "";
-
-      portalLogoDataUrl = null;
-      status.innerHTML = "";
-
-      if (titleSettings.logoImage || titleSettings.logoImageUrl) {
-        fileNameEl.textContent = "(logo actuel chargé)";
-      } else {
-        fileNameEl.textContent = "(aucun fichier)";
-      }
-
-      titleSettings.cameras.forEach((cam, index) => {
-        const nameEl = document.getElementById(`camera-name-${index}`);
-        const snapEl = document.getElementById(`camera-snapshot-${index}`);
-        const clickEl = document.getElementById(`camera-click-${index}`);
-        if (!nameEl || !snapEl || !clickEl) return;
-        nameEl.value = cam.name || "";
-        snapEl.value = cam.snapshotUrl || "";
-        clickEl.value = cam.clickUrl || "";
-      });
-
-      modal.classList.remove("modal-hidden");
-      setTimeout(() => titleInput.focus(), 0);
-    }
-
-    function closeSettingsModal() {
-      const modal = document.getElementById("settings-modal");
-      modal.classList.add("modal-hidden");
-      portalLogoDataUrl = null;
-    }
-
-    function setupSettingsForm() {
-      const form = document.getElementById("settings-form");
-      const titleInput = document.getElementById("portal-title-input");
-      const subtitleInput = document.getElementById("portal-subtitle-input");
-      const logoTextInput = document.getElementById("portal-logo-text");
-      const logoUrlInput = document.getElementById("portal-logo-url");
-      const logoFileInput = document.getElementById("portal-logo-file");
-      const fileNameEl = document.getElementById("portal-logo-filename");
-      const themeSelect = document.getElementById("portal-theme-select");
-      const authUserInput = document.getElementById("portal-auth-user");
-      const authPassInput = document.getElementById("portal-auth-pass");
-      const status = document.getElementById("settings-status");
-      const btnResetTitle = document.getElementById("btn-reset-title");
-
-      logoFileInput.addEventListener("change", () => {
-        const file = logoFileInput.files && logoFileInput.files[0];
-        if (!file) {
-          fileNameEl.textContent = "(aucun fichier)";
-          portalLogoDataUrl = null;
-          return;
-        }
-        if (file.size > MAX_IMAGE_SIZE) {
-          status.innerHTML =
-            '<span class="err">Logo trop lourd (max ~100 Ko). Choisis une image plus légère.</span>';
-          logoFileInput.value = "";
-          fileNameEl.textContent = "(aucun fichier)";
-          portalLogoDataUrl = null;
-          return;
-        }
-        fileNameEl.textContent = file.name;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          portalLogoDataUrl = e.target.result;
-        };
-        reader.readAsDataURL(file);
-      });
-
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const title = titleInput.value.trim();
-        const subtitle = subtitleInput.value.trim();
-        const logoText = logoTextInput.value.trim() || "HL";
-        const logoExternal = logoUrlInput.value.trim();
-        const theme = themeSelect.value || "dark";
-        const authUser = authUserInput ? authUserInput.value.trim() : "";
-        const authPass = authPassInput ? authPassInput.value : "";
-        const previousAuth = { ...authSettings };
-
-        if (!title || !subtitle) {
-          status.innerHTML =
-            '<span class="err">Merci de renseigner le titre et le sous-titre.</span>';
-          return;
-        }
-
-        if (!authUser) {
-          status.innerHTML = '<span class="err">Identifiant requis.</span>';
-          return;
-        }
-
-        titleSettings.title = title;
-        titleSettings.subtitle = subtitle;
-        titleSettings.logoText = logoText;
-        titleSettings.theme = theme;
-
-        let passwordChanged = false;
-        authSettings.username = authUser;
-        if (authPass) {
-          const hashed = await hashPassword(authPass);
-          authSettings.passwordHash = normalizePasswordHash(hashed) || DEFAULT_AUTH_PASSWORD_HASH;
-          passwordChanged = true;
-        }
-
-        if (logoExternal) {
-          titleSettings.logoImageUrl = logoExternal;
-          titleSettings.logoImage = null;
-        } else if (portalLogoDataUrl !== null) {
-          titleSettings.logoImage = portalLogoDataUrl;
-          titleSettings.logoImageUrl = "";
-        }
-
-        const cams = [];
-        titleSettings.cameras.forEach((_, index) => {
-          const nameEl = document.getElementById(`camera-name-${index}`);
-          const snapEl = document.getElementById(`camera-snapshot-${index}`);
-          const clickEl = document.getElementById(`camera-click-${index}`);
-          cams.push({
-            name: nameEl ? nameEl.value.trim() : "",
-            snapshotUrl: snapEl ? snapEl.value.trim() : "",
-            clickUrl: clickEl ? clickEl.value.trim() : "",
-          });
-        });
-        titleSettings.cameras = cams;
-
-        saveAuthSettings();
-        ensureAuthDefaultsPersisted();
-        updateAuthOverlayFields(false);
-        handleAuthSessionAfterSettings(
-          previousAuth.username !== authSettings.username || passwordChanged
-        );
-
-        saveTitleSettings();
-        applyTheme();
-        applyTitleSettings();
-        renderCameras();
-
-        status.innerHTML =
-          '<span class="ok">Bandeau, thème, caméras et accès protégés mis à jour.</span>';
-      });
-
-      btnResetTitle.addEventListener("click", () => {
-        if (!confirm("Revenir aux valeurs par défaut du titre, du sous-titre, du logo, des caméras et du thème ?")) {
-          return;
-        }
-        titleSettings = {
-          title: "Homelab Control Hub",
-          subtitle: "Portail privé – services locaux & containers",
-          logoText: "HL",
-          logoImageUrl: "",
-          logoImage: null,
-          theme: "dark",
-          cameras: [
-            { name: "Entrée", snapshotUrl: "", clickUrl: "" },
-            { name: "Jardin", snapshotUrl: "", clickUrl: "" },
-            { name: "Garage", snapshotUrl: "", clickUrl: "" },
-            { name: "Salon", snapshotUrl: "", clickUrl: "" },
-          ],
-        };
-        authSettings = { username: DEFAULT_AUTH_USERNAME, passwordHash: DEFAULT_AUTH_PASSWORD_HASH };
-        if (authUserInput) authUserInput.value = authSettings.username;
-        if (authPassInput) authPassInput.value = "";
-        saveAuthSettings();
-        ensureAuthDefaultsPersisted();
-        updateAuthOverlayFields();
-        handleAuthSessionAfterSettings(true);
-        saveTitleSettings();
-        applyTheme();
-        applyTitleSettings();
-        renderCameras();
-
-        titleInput.value = titleSettings.title;
-        subtitleInput.value = titleSettings.subtitle;
-        logoTextInput.value = titleSettings.logoText;
-        logoUrlInput.value = "";
-        logoFileInput.value = "";
-        fileNameEl.textContent = "(aucun fichier)";
-        themeSelect.value = titleSettings.theme;
-        if (authUserInput) authUserInput.value = authSettings.username;
-        if (authPassInput) authPassInput.value = "";
-
-        titleSettings.cameras.forEach((cam, index) => {
-          const nameEl = document.getElementById(`camera-name-${index}`);
-          const snapEl = document.getElementById(`camera-snapshot-${index}`);
-          const clickEl = document.getElementById(`camera-click-${index}`);
-          if (!nameEl || !snapEl || !clickEl) return;
-          nameEl.value = cam.name || "";
-          snapEl.value = cam.snapshotUrl || "";
-          clickEl.value = cam.clickUrl || "";
-        });
-
-        status.innerHTML =
-          '<span class="ok">Titre, sous-titre, logo, caméras et thème réinitialisés.</span>';
-      });
-    }
-
-    function setupSearch() {
-      const search = document.getElementById("search");
-      search.addEventListener("input", () => {
-        renderTiles(search.value);
-      });
-    }
-
-    function setStatus(linkId, status) {
-      const dot = statusDots[linkId];
-      if (!dot) return;
-      dot.classList.remove("tile-status-up", "tile-status-down", "tile-status-unknown");
-      if (status === "up") {
-        dot.classList.add("tile-status-up");
-        dot.title = "État : UP (HTTP OK)";
-      } else if (status === "down") {
-        dot.classList.add("tile-status-down");
-        dot.title = "État : DOWN (erreur réseau)";
-      } else {
-        dot.classList.add("tile-status-unknown");
-        dot.title = "État : inconnu";
-      }
-    }
-
-    function getHealthUrl(link) {
-      if (link.healthUrl && link.healthUrl.trim()) return link.healthUrl.trim();
-      if (!link.url) return null;
-      const trimmed = link.url.endsWith("/") ? link.url.slice(0, -1) : link.url;
-      return `${trimmed}${DEFAULT_HEALTH_PATH}`;
-    }
-
-    function pingLinkWithImage(url, linkId) {
-      const img = new Image();
-      let resolved = false;
-      const timeout = setTimeout(() => {
-        if (resolved) return;
-        resolved = true;
-        setStatus(linkId, "down");
-      }, HEALTH_TIMEOUT);
-
-      img.onload = () => {
-        if (resolved) return;
-        resolved = true;
-        clearTimeout(timeout);
-        setStatus(linkId, "up");
-      };
-
-      img.onerror = () => {
-        if (resolved) return;
-        resolved = true;
-        clearTimeout(timeout);
-        setStatus(linkId, "down");
-      };
-
-      img.referrerPolicy = "no-referrer";
-      img.decoding = "async";
-      const sep = url.includes("?") ? "&" : "?";
-      img.src = `${url}${sep}t=${Date.now()}`;
-    }
-
-    function pingLink(link) {
-      const url = getHealthUrl(link);
-      if (!url) {
-        setStatus(link.id, "unknown");
-        return;
-      }
-
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), HEALTH_TIMEOUT);
-
-      fetch(url, {
-        mode: "cors",
-        cache: "no-store",
-        redirect: "follow",
-        signal: controller.signal,
-      })
-        .then((response) => {
-          clearTimeout(timeout);
-          if (response.ok || response.type === "opaque") {
-            setStatus(link.id, "up");
-          } else {
-            setStatus(link.id, "down");
-          }
-        })
-        .catch(() => {
-          clearTimeout(timeout);
-          pingLinkWithImage(url, link.id);
-        });
-    }
-
-    function scheduleHealthChecks() {
-      links.forEach((link) => pingLink(link));
-      setInterval(() => {
-        links.forEach((link) => pingLink(link));
-      }, HEALTH_CHECK_INTERVAL);
-    }
-
-    /* Modal caméra plein écran */
-    function openCameraModal(cam) {
-      const modal = document.getElementById("camera-modal");
-      const nameEl = document.getElementById("camera-modal-name");
-      const imgEl = document.getElementById("camera-modal-img");
-      const placeholderEl = document.getElementById("camera-modal-placeholder");
-      const statusEl = document.getElementById("camera-modal-status");
-      const openTabBtn = document.getElementById("camera-modal-open-tab");
-
-      // stop éventuel ancien intervalle
-      if (cameraModalIntervalId !== null) {
-        clearInterval(cameraModalIntervalId);
-        cameraModalIntervalId = null;
-      }
-
-      currentCameraModal = {
-        name: cam.name || "",
-        snapshotUrl: cam.snapshotUrl || "",
-        clickUrl: cam.clickUrl || "",
-      };
-
-      nameEl.textContent = currentCameraModal.name || "Caméra";
-      statusEl.innerHTML = "";
-
-      if (currentCameraModal.snapshotUrl) {
-        const base = currentCameraModal.snapshotUrl;
-        const sep = base.includes("?") ? "&" : "?";
-
-        const loadFrame = () => {
-          imgEl.style.display = "block";
-          placeholderEl.style.display = "none";
-          imgEl.src = `${base}${sep}t=${Date.now()}`;
-        };
-
-        imgEl.onerror = () => {
-          imgEl.style.display = "none";
-          placeholderEl.style.display = "flex";
-          statusEl.innerHTML =
-            '<span class="err">Impossible de charger le flux / snapshot. Vérifie l’URL HTTP ou les droits.</span>';
-        };
-
-        loadFrame();
-        cameraModalIntervalId = setInterval(loadFrame, CAMERA_MODAL_REFRESH_INTERVAL);
-      } else {
-        imgEl.style.display = "none";
-        placeholderEl.style.display = "flex";
-      }
-
-      if (currentCameraModal.clickUrl) {
-        openTabBtn.disabled = false;
-        openTabBtn.classList.remove("btn-secondary");
-        openTabBtn.classList.add("btn-primary");
-      } else {
-        openTabBtn.disabled = true;
-        openTabBtn.classList.remove("btn-primary");
-        openTabBtn.classList.add("btn-secondary");
-      }
-
-      modal.classList.remove("modal-hidden");
-      setTimeout(() => document.getElementById("camera-modal-close").focus(), 0);
-    }
-
-    function closeCameraModal() {
-      const modal = document.getElementById("camera-modal");
-      modal.classList.add("modal-hidden");
-      if (cameraModalIntervalId !== null) {
-        clearInterval(cameraModalIntervalId);
-        cameraModalIntervalId = null;
-      }
-    }
-
+    // ============================================================================
+    // 17. INITIALISATION
+    // ============================================================================
     document.addEventListener("DOMContentLoaded", async () => {
+      // Chargement des données
       await loadAuthSettings();
       loadTitleSettings();
-      applyTheme();
-      applyTitleSettings();
-
-      buildCameraSettingsFields();
-      renderCameras();
-
       loadTabState();
       loadLinks();
 
+      // Application du thème et des paramètres
+      applyTheme();
+      applyTitleSettings();
+
+      // Construction de l'UI
+      buildCameraSettingsFields();
+      renderCameras();
       populateTabSelect();
       renderTabs();
       renderTiles();
 
+      // Setup des formulaires et événements
       setupSearch();
       setupShortcutForm();
       setupSettingsForm();
@@ -3015,62 +2938,48 @@
       setupPasswordVisibilityToggle("auth-password", "auth-password-toggle");
       setupPasswordVisibilityToggle("portal-auth-pass", "portal-auth-pass-toggle");
 
+      // Horloge et rafraîchissement périodique
       updateClock();
-      setInterval(updateClock, 1000);
-      setInterval(() => refreshCameraSnapshots(false), 15000);
+      setInterval(updateClock, CONFIG.CLOCK_INTERVAL);
+      setInterval(() => refreshCameraSnapshots(false), CONFIG.CAMERA_STRIP_REFRESH);
 
+      // Health checks
       scheduleHealthChecks();
 
-      const btnOpenModal = document.getElementById("btn-open-modal");
-      const btnCloseModal = document.getElementById("modal-close");
-      const modal = document.getElementById("modal");
+      // Événements des boutons FAB
+      $("btn-open-modal")?.addEventListener("click", () => openShortcutModal("new", null));
+      $("modal-close")?.addEventListener("click", closeShortcutModal);
+      $("modal")?.addEventListener("click", (e) => {
+        if (e.target === $("modal")) closeShortcutModal();
+      });
 
-      btnOpenModal.addEventListener("click", () => openShortcutModal("new", null));
-      btnCloseModal.addEventListener("click", closeShortcutModal);
-      modal.addEventListener("click", (e) => {
-        if (e.target === modal) {
-          closeShortcutModal();
+      $("btn-open-settings")?.addEventListener("click", openSettingsModal);
+      $("settings-close")?.addEventListener("click", closeSettingsModal);
+      $("settings-modal")?.addEventListener("click", (e) => {
+        if (e.target === $("settings-modal")) closeSettingsModal();
+      });
+
+      // Modal caméra
+      $("camera-modal-close")?.addEventListener("click", closeCameraModal);
+      $("camera-modal-close-bottom")?.addEventListener("click", closeCameraModal);
+      $("camera-modal")?.addEventListener("click", (e) => {
+        if (e.target === $("camera-modal")) closeCameraModal();
+      });
+
+      $("camera-modal-open-tab")?.addEventListener("click", () => {
+        if (state.currentCameraModal.clickUrl) {
+          window.open(state.currentCameraModal.clickUrl, "_blank", "noopener,noreferrer");
         }
       });
 
-      const btnOpenSettings = document.getElementById("btn-open-settings");
-      const btnCloseSettings = document.getElementById("settings-close");
-      const settingsModalEl = document.getElementById("settings-modal");
-
-      btnOpenSettings.addEventListener("click", openSettingsModal);
-      btnCloseSettings.addEventListener("click", closeSettingsModal);
-      settingsModalEl.addEventListener("click", (e) => {
-        if (e.target === settingsModalEl) {
-          closeSettingsModal();
-        }
-      });
-
-      const camModalEl = document.getElementById("camera-modal");
-      const camCloseTop = document.getElementById("camera-modal-close");
-      const camCloseBottom = document.getElementById("camera-modal-close-bottom");
-      const camOpenTabBtn = document.getElementById("camera-modal-open-tab");
-
-      camCloseTop.addEventListener("click", closeCameraModal);
-      camCloseBottom.addEventListener("click", closeCameraModal);
-      camModalEl.addEventListener("click", (e) => {
-        if (e.target === camModalEl) {
-          closeCameraModal();
-        }
-      });
-
-      camOpenTabBtn.addEventListener("click", () => {
-        if (!currentCameraModal.clickUrl) return;
-        window.open(currentCameraModal.clickUrl, "_blank", "noopener,noreferrer");
-      });
-
+      // Fermeture globale avec Escape
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
-          closeShortcutModal();
-          closeSettingsModal();
-          closeCameraModal();
+          modalManager.closeAll();
         }
       });
 
+      // Vérification session d'authentification
       enforceAuthSession();
     });
   </script>
